@@ -69,11 +69,14 @@ void log_showBox (int wait, int doFatal) {
  * once the real owning TU lands in the KEEP list these go away. */
 
 #include "libs/compiler.h"   /* BOOLEAN, BYTE, etc. */
-#include "uqm/globdata.h"    /* GLOBDATA, CONTEXT */
+#include "libs/gfxlib.h"     /* FRAME, STRING, CONTEXT */
+#include "libs/heap.h"       /* QUEUE */
+#include "uqm/globdata.h"    /* GLOBDATA, ACTIVITY */
+#include "uqm/starmap.h"     /* STAR_DESC */
+#include "uqm/element.h"     /* PRIMITIVE, MAX_DISPLAY_PRIMS */
 
+/* GlobData + RadarContext now defined by uqm/globdata.c (in KEEP). */
 volatile BOOLEAN GamePaused;
-GLOBDATA  GlobData;
-CONTEXT   RadarContext;
 
 /* options.h globals — these would be populated by parseOptions() in a
  * real main(); the cart hand-fixes them once content paths are known. */
@@ -120,3 +123,13 @@ int ScreenHeightActual;
 int snddriver, soundflags;
 ACTIVITY NextActivity;
 ACTIVITY LastActivity;
+FRAME FlagStatFrame;
+FRAME MiscDataFrame;
+FRAME FontGradFrame;
+QUEUE master_q;
+STRING GameStrings;
+STAR_DESC *CurStarDescPtr;
+PRIMITIVE DisplayArray[MAX_DISPLAY_PRIMS];
+FRAME Screen;
+int ScreenWidth;
+int ScreenHeight;

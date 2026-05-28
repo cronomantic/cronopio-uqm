@@ -64,6 +64,8 @@ UQM_SRCS=(
   "$US/libs/threads/thrcommon.c"
   "$US/libs/task/tasklib.c"
   "$US/uqm/starcon.c"
+  "$US/uqm/globdata.c"
+  "$US/uqm/displist.c"
 )
 
 # Our seam + cart entry + the libc.
