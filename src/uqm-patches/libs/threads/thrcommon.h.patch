@@ -1,0 +1,12 @@
+--- a/sc2/src/libs/threads/thrcommon.h
++++ b/sc2/src/libs/threads/thrcommon.h
+@@ -19,7 +19,9 @@
+ #	include "sdl/sdlthreads.h"
+ #elif defined(THREADLIB_PTHREAD)
+ #	include "pthread/posixthreads.h"
++#elif defined(THREADLIB_CRON)
++#	include "cron/cronthreads.h"
+ #endif  /* defined(THREADLIB_PTHREAD) */
+
+
+ #endif  /* _THR_COMMON_H */
