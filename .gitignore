@@ -1,0 +1,17 @@
+build/
+*.bin
+*.crom
+*.sym
+*.log
+*.ppm
+*.png
+*.exe
+*.o
+*.bc
+*.obj
+*.a
+*.dll
+*.so
+*.dylib
+content/*.uqm
+!content/.gitkeep
