@@ -55,6 +55,39 @@ void log_add (log_Level lvl, const char *fmt, ...) {
     va_end (ap);
 }
 
+void log_showBox (int wait, int doFatal) {
+    /* Real uqmlog pops a platform message box; we just route through the
+     * normal log channel (msgs were already log_add'd before this call). */
+    (void)wait; (void)doFatal;
+    cron_log ("[log_showBox]\n", 14);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Stub globals — externs referenced by starcon.c (and friends) that
+ * live in TUs we haven't compiled yet. Each is defined here just enough
+ * to satisfy the translator's "extern must have an initializer" check;
+ * once the real owning TU lands in the KEEP list these go away. */
+
+#include "libs/compiler.h"   /* BOOLEAN, BYTE, etc. */
+#include "uqm/globdata.h"    /* GLOBDATA, CONTEXT */
+
+volatile BOOLEAN GamePaused;
+GLOBDATA  GlobData;
+CONTEXT   RadarContext;
+
+/* options.h globals — these would be populated by parseOptions() in a
+ * real main(); the cart hand-fixes them once content paths are known. */
+char baseContentPath[PATH_MAX];
+struct uio_DirHandle *contentDir;   /* uio_* are uqm filelib types */
+struct uio_DirHandle *configDir;
+struct uio_DirHandle *saveDir;
+struct uio_DirHandle *meleeDir;
+
+#include "uqm/controls.h"
+CONTROLLER_INPUT_STATE          CurrentInputState;
+CONTROLLER_INPUT_STATE          PulsedInputState;
+volatile CONTROLLER_INPUT_STATE ImmediateInputState;
+
 /* ---------------------------------------------------------------------- */
 /* timelib — UQM measures time in ONE_SECOND=840 ticks/sec units.
  * GetTimeCounter is the "now" reading; SleepThread/SleepThreadUntil use it
@@ -74,3 +107,16 @@ TimeCount GetTimeCounter (void) {
 
 void   Async_process            (void) { }
 uint32 Async_timeBeforeNextMs   (void) { return 1000u; }
+
+/* ---------------------------------------------------------------------- */
+/* STUB_EXTERNS_START — auto-discovered externs from tools/stub_externs.sh.
+ * Each entry comes from a translator "extern not supported" error;
+ * the stub gives the symbol storage so the build advances. These come
+ * out as the real owning TUs land in build_uqm.sh's KEEP list. */
+int GfxFlags;
+int GraphicsDriver;
+int ScreenWidthActual;
+int ScreenHeightActual;
+int snddriver, soundflags;
+ACTIVITY NextActivity;
+ACTIVITY LastActivity;

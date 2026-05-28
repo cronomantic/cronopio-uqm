@@ -30,4 +30,9 @@ extern void log_addV (log_Level, const char *fmt, va_list);
 #define log_add_nothread  log_add
 #define log_add_nothreadV log_addV
 
+/* Real uqmlog pops a platform message box. Our stub is a no-op — UQM
+ * uses this to surface fatal errors that the user should see; in the
+ * cart we route them through cron_log already via log_add. */
+extern void log_showBox (int wait, int doFatal);
+
 #endif /* LOG_CRON_H_ */

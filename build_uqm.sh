@@ -63,11 +63,13 @@ UQM_SRCS=(
   "$US/libs/threads/cron/cronthreads.c"
   "$US/libs/threads/thrcommon.c"
   "$US/libs/task/tasklib.c"
+  "$US/uqm/starcon.c"
 )
 
 # Our seam + cart entry + the libc.
 PORT=(
   "$ROOT/src/uqm_seam.c"
+  "$ROOT/src/uqm_stubs_link.c"
   "$ROOT/src/main_cron.c"
   "$SDK/lib/cvm_libc.c"
 )

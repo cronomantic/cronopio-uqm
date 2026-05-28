@@ -55,15 +55,9 @@ static int worker_b (void *arg) {
     return 0;
 }
 
-static int stub_starcon2main (void *arg) {
-    (void)arg;
-    for (int i = 0; i < 3; ++i) {
-        log_add (log_Info, "Starcon2Main heartbeat %d", i);
-        SleepThread (ONE_SECOND / 2);
-    }
-    log_add (log_Info, "Starcon2Main exiting (stub)");
-    return 0;
-}
+/* The real Starcon2Main lives in sc2/src/uqm/starcon.c (now in the build).
+ * Declare the prototype so we can pass it to StartThread. */
+extern int Starcon2Main (void *threadArg);
 
 /* ---------------------------------------------------------------------- */
 /* cron_set_frame callback — drives the scheduler each host frame. */
@@ -87,9 +81,12 @@ int main (void) {
      * the main thread deadlocks if it ever calls it. The threadlib.h
      * comment is explicit about this (line 82). StartThread sets sem=NULL
      * and returns immediately. */
-    StartThread (worker_a,          NULL, 64 * 1024, "worker_a");
-    StartThread (worker_b,          NULL, 64 * 1024, "worker_b");
-    StartThread (stub_starcon2main, NULL, 64 * 1024, "Starcon2Main");
+    /* Workers are bring-up scaffolding — they prove the scheduler dispatches
+     * us. Keep them around for now; remove once Starcon2Main reaches its
+     * main loop and we don't need the heartbeat-progress signal. */
+    StartThread (worker_a,     NULL, 64 * 1024, "worker_a");
+    StartThread (worker_b,     NULL, 64 * 1024, "worker_b");
+    StartThread (Starcon2Main, NULL, 64 * 1024, "Starcon2Main");
 
     cron_set_frame (frame);
     return 0;

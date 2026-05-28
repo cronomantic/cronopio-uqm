@@ -32,6 +32,14 @@
 #define HAVE_WCHAR_T  1
 #define HAVE_WINT_T   1
 
+/* port.h's other-platform branches define PATH_MAX from <limits.h>; the
+ * Cronopio libc doesn't ship it (no real filesystem) so we name it here.
+ * 256 covers anything the cart-side path code might construct (UQM paths
+ * are short — content/save/config names + slash separators). */
+#ifndef PATH_MAX
+#  define PATH_MAX 256
+#endif
+
 /* We DON'T actually have readdir_r, but defining it here bypasses port.h's
  * <dirent.h> include + readdir_r prototype that the cart doesn't need.
  * Any code path that calls readdir_r will fail at link/translate time —
