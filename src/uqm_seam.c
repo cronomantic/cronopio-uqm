@@ -126,7 +126,7 @@ ACTIVITY LastActivity;
 FRAME FlagStatFrame;
 FRAME MiscDataFrame;
 FRAME FontGradFrame;
-QUEUE master_q;
+/* master_q — now defined by uqm/master.c (in KEEP). */
 STRING GameStrings;
 STAR_DESC *CurStarDescPtr;
 PRIMITIVE DisplayArray[MAX_DISPLAY_PRIMS];

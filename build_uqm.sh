@@ -66,6 +66,7 @@ UQM_SRCS=(
   "$US/uqm/starcon.c"
   "$US/uqm/globdata.c"
   "$US/uqm/displist.c"
+  "$US/uqm/master.c"
 )
 
 # Our seam + cart entry + the libc.

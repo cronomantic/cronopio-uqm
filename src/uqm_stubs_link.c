@@ -18,8 +18,18 @@ void initAudio () { /* link-only stub */; }
  * see what fails NEXT. eax-trick: return value is in R0 per ABI; emit
  * a tiny inline asm-free body that sets it to 1 via a typed return. */
 int LoadKernel (int kernel, int gfxdriver) { (void)kernel; (void)gfxdriver; return 1; }
-void SplashScreen () { /* link-only stub */; }
-void StartGame () { /* link-only stub */; }
+/* SplashScreen(cb): the real one shows splash gfx then invokes the
+ * callback (BackgroundInitKernel) which runs LoadMasterShipList +
+ * InitGameKernel. We don't draw the splash yet, but we MUST invoke the
+ * callback or the master ship list never initialises and LockMasterShip
+ * asserts on an empty master_q. Behavioural seam stub, not a no-op. */
+void SplashScreen (void (*DoProcessing)(DWORD TimeOut)) {
+    if (DoProcessing) DoProcessing (0);
+}
+/* StartGame: returns BOOLEAN (start a new game?). No menu/UI yet, so
+ * return FALSE — Starcon2Main's `while (StartGame())` loop exits cleanly
+ * instead of spinning forever on a garbage return value. */
+int StartGame () { return 0; }
 void SetPlayerInputAll () { /* link-only stub */; }
 /* InitGameStructures — now real, in uqm/globdata.c (KEEP) */
 void InitGameClock () { /* link-only stub */; }
@@ -40,9 +50,9 @@ void UninitGameClock () { /* link-only stub */; }
 /* UninitGameStructures — now real, in uqm/globdata.c (KEEP) */
 void ClearPlayerInputAll () { /* link-only stub */; }
 void UninitGameKernel () { /* link-only stub */; }
-void FreeMasterShipList () { /* link-only stub */; }
+/* FreeMasterShipList — now real, in uqm/master.c (KEEP) */
 void FreeKernel () { /* link-only stub — real in uqm/cleanup.c (not in KEEP yet) */ }
-void LoadMasterShipList () { /* link-only stub */; }
+/* LoadMasterShipList — now real, in uqm/master.c (KEEP) */
 void InitGameKernel () { /* link-only stub */; }
 void UpdateInputState () { /* link-only stub */; }
 void GameClockTick () { /* link-only stub */; }
@@ -56,8 +66,13 @@ void SetContextFGFrame () { /* link-only stub */ }
 void SetContextClipRect () { /* link-only stub */ }
 /* InitQueue — now real, in uqm/displist.c (KEEP) */
 /* AllocLink — now real, in uqm/displist.c (KEEP) */
-void FindMasterShip () { /* link-only stub */ }
-void load_ship () { /* link-only stub */ }
+/* FindMasterShip / FindMasterShipIndex / GetShipCostFromIndex /
+ * GetShipIconsFromIndex / GetShipMeleeIconsFromIndex — now real,
+ * in uqm/master.c (KEEP) */
+/* load_ship: no content packs yet → return NULL so LoadMasterShipList
+ * cleanly skips each entry (builds an empty master_q) instead of
+ * dereferencing a garbage RACE_DESC*. */
+void *load_ship () { return 0; }
 void free_ship () { /* link-only stub */ }
 /* PutQueue — now real, in uqm/displist.c (KEEP) */
 void InitSISContexts () { /* link-only stub */ }
@@ -76,3 +91,4 @@ void UninitGroupInfo () { /* link-only stub */ }
 void UninitPlanetInfo () { /* link-only stub */ }
 void ReleaseStringTable () { /* link-only stub */ }
 void DestroyStringTable () { /* link-only stub */ }
+void GetStarShipFromIndex () { /* link-only stub */ }
