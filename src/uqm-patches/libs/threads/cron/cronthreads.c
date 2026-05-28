@@ -36,7 +36,7 @@
 #include "cronthreads.h"
 
 #include <coro.h>           /* Cronopio SDK: cron_coro_t / init / swap */
-#include <cronopio.h>       /* cron_ticks_ms() for budgeting */
+#include <cronopio.h>       /* cron_time_ms() for budgeting */
 
 /* ----------------------------------------------------------------------- */
 /* Cart-private thread record. UQM hands these out as opaque `Thread`. */
@@ -68,9 +68,14 @@ typedef struct CronThread {
     int          retval;        /* set when func returns */
     TimeCount    wake_at;       /* when SLEEPING */
 
-    /* Wait queue links — intrusive doubly-linked into mutex/sem/cond/join */
+    /* Wait queue links — intrusive doubly-linked into mutex/sem/cond/join.
+     * Distinct from all_next to avoid clobbering each other (a thread on a
+     * wait queue is still listed in s_all_head). */
     struct CronThread *q_next;
     struct CronThread *q_prev;
+
+    /* Singly-linked through the global all-threads list. */
+    struct CronThread *all_next;
 
     /* Joiner (set when another thread is WaitThread'ing us) */
     struct CronThread *joiner;
@@ -148,11 +153,11 @@ InitThreadSystem_CRON (void) {
 
 void
 UnInitThreadSystem_CRON (void) {
-    /* Walk s_all_head, free stacks of dead threads, leak the rest (UQM is
-     * shutting down anyway). */
+    /* Walk s_all_head, free stacks + records of every alive thread (UQM is
+     * shutting down). */
     CronThread *t = s_all_head;
     while (t) {
-        CronThread *next = t->q_next;   /* re-use q_next for all-list — see DestroyThread */
+        CronThread *next = t->all_next;
         if (t->stack) HFree (t->stack);
         HFree (t);
         t = next;
@@ -213,9 +218,9 @@ CreateThread_CRON (ThreadFunction func, void *data, SDWORD stackSize)
     t->name = name;
 #endif
 
-    /* Link into all-threads list (re-using q_next briefly — sched lists use
-     * q_next/q_prev too, but a NEW thread isn't on a wait queue yet). */
-    t->q_next = s_all_head;
+    /* Link into all-threads list via all_next (q_next/q_prev are reserved
+     * for the wait queues). */
+    t->all_next = s_all_head;
     s_all_head = t;
 
     t->state = THR_RUNNABLE;
@@ -239,10 +244,10 @@ WaitThread_CRON (Thread thread, int *status) {
 void
 DestroyThread_CRON (Thread thread) {
     CronThread *t = (CronThread *)thread;
-    /* Remove from all-list — TODO: O(n), acceptable for ~10 threads max */
+    /* Remove from all-list — O(n), acceptable for ~10 threads max */
     CronThread **pp = &s_all_head;
-    while (*pp && *pp != t) pp = &(*pp)->q_next;
-    if (*pp) *pp = t->q_next;
+    while (*pp && *pp != t) pp = &(*pp)->all_next;
+    if (*pp) *pp = t->all_next;
     if (t->stack) HFree (t->stack);
     HFree (t);
 }
@@ -463,19 +468,19 @@ GetMyThreadLocal_CRON (void) {
 
 uint32_t
 Scheduler_CRON_RunFrame (uint32_t tick_budget_ms) {
-    uint32_t start = cron_ticks_ms ();
+    uint32_t start = cron_time_ms ();
     uint32_t deadline = start + tick_budget_ms;
 
     /* Wake any sleepers whose timer has expired. O(n) scan of all-list. */
     TimeCount now = GetTimeCounter ();
-    for (CronThread *t = s_all_head; t; t = t->q_next) {
+    for (CronThread *t = s_all_head; t; t = t->all_next) {
         if (t->state == THR_SLEEPING && now >= t->wake_at) {
             t->state = THR_RUNNABLE;
             ready_push (t);
         }
     }
 
-    while (s_ready_head && cron_ticks_ms () < deadline) {
+    while (s_ready_head && cron_time_ms () < deadline) {
         CronThread *t = ready_pop ();
         if (t->state != THR_RUNNABLE) continue;  /* stale entry */
         s_current = t;
@@ -485,7 +490,7 @@ Scheduler_CRON_RunFrame (uint32_t tick_budget_ms) {
         /* Thread yielded — its state was already updated by whatever
          * blocking/yield call returned us here. */
     }
-    return cron_ticks_ms () - start;
+    return cron_time_ms () - start;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -540,12 +545,13 @@ wait_remove (CronThread **head, CronThread **tail, CronThread *t) {
     t->q_next = t->q_prev = NULL;
 }
 
-/* TODO open questions, all answered in cronovm-coro-design.md:
- *   - ABI arg0 reg for cron_coro_init's trampoline jump
- *   - trampoline resolution strategy (cart passes fn ptr is the plan)
- *   - sentinel-pc planting in CORO_INIT for stray RET
- *   - re-entry into DEAD coroutine traps cleanly
- *   - all-list is being reused as q_next/q_prev — separate `all_next` link
- *     might be cleaner; current code is structurally wrong (free uses
- *     q_next which a thread on a wait queue also uses). FIX BEFORE USE.
+/* All open questions from the design memory are now resolved:
+ *   - ABI arg0 reg = R0 (verified in translator.c) → cron_coro_init writes
+ *     _dest = 0; the trampoline reads `self` from R0.
+ *   - trampoline resolution: cart writes _pc = (uintptr_t)&trampoline_fn,
+ *     status=FRESH; the opcode does FUNCS[pc] on first swap.
+ *   - sentinel-pc at stack top: cron_coro_init plants 0xFFFFFFFE there,
+ *     stray RET faults via CVM_E_BAD_PC.
+ *   - re-entry into DEAD coro: CORO_SWAP traps CVM_E_BAD_CORO_STATE.
+ *   - q_next overload: FIXED — CronThread has dedicated all_next field.
  */

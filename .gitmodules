@@ -4,3 +4,4 @@
 [submodule "third_party/uqm"]
 	path = third_party/uqm
 	url = https://github.com/cronomantic/The-UrQuan-Masters.git
+	branch = cronopio-port
