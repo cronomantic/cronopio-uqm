@@ -56,6 +56,7 @@ INCS=(
   -I "$US"
   -I "$US/libs"
   -I "$US/libs/uio"
+  -I "$CRONOPIO/tools/2dpak/vendor"   # stb_image.h (PNG decode, cart-side)
 )
 
 # UQM translation units we compile this round. Keep MINIMAL — just enough
@@ -166,6 +167,7 @@ PORT=(
   "$ROOT/src/uqm_seam.c"
   "$ROOT/src/uqm_stubs_link.c"
   "$ROOT/src/sdl_compat.c"
+  "$ROOT/src/img_cron.c"
   "$ROOT/src/vid_cron.c"
   "$ROOT/src/main_cron.c"
   "$SDK/lib/cvm_libc.c"

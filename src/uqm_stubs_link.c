@@ -102,11 +102,5 @@ void prepareAddons () { /* link-only stub */ }
  * so this is a no-op. */
 void TFB_UploadTransitionScreen () { /* link-only stub */ }
 
-/* sdluio_loadImage: SDL_image-backed PNG loader for cel/font graphics. We do
- * not use SDL_image — content image decode (PNG -> 8bpp/32bpp canvas) is a
- * later slice — so loading from file fails gracefully for now. Callers
- * (TFB_DrawCanvas_LoadFromFile) handle a NULL return. */
-void *sdluio_loadImage (void *dir, const char *fileName) {
-    (void) dir; (void) fileName;
-    return 0;
-}
+/* sdluio_loadImage is now REAL — src/img_cron.c (PNG decode via stb_image,
+ * reading through uio). */

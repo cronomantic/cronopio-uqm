@@ -141,6 +141,11 @@ static void mount_content (void) {
      * — else SetColorMap (in real LoadKernel) locks an uninitialised mutex. */
     extern void InitColorMaps (void);
     InitColorMaps ();
+
+    /* SLICE-3a derisk: prove the uio -> stb PNG decode path works on real
+     * content before wiring the cel/font resource loaders. */
+    extern void cron_img_selftest (uio_DirHandle *dir);
+    if (contentDir) cron_img_selftest (contentDir);
 }
 
 int main (void) {
