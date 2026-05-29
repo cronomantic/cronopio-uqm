@@ -21,7 +21,13 @@ void initAudio () { /* link-only stub */; }
 void StopSound () { /* link-only stub */; }
 void InitSound () { /* link-only stub */ }
 void InitVideoPlayer () { /* link-only stub */ }
-void LoadSoundInstance () { /* link-only stub */ }
+/* LoadSound = LoadSoundInstance (nameref.h); the result feeds CaptureSound
+ * (= CaptureStringTable) -> MenuSounds. Audio isn't implemented, so return 0
+ * (NULL): CaptureStringTable(0) -> NULL -> MenuSounds == 0, so DoInput's
+ * menu-sound block is skipped. A void stub returned a GARBAGE non-NULL handle
+ * -> MenuSounds invalid -> SetAbsSoundIndex(MenuSounds) (= SetAbsStringTableIndex)
+ * OOB-trapped on every menu SELECT. */
+void *LoadSoundInstance () { return 0; }
 
 /* ---- input — FlushInput/UpdateInputState now REAL (uqm/gameinp.c). ---- */
 void HumanInputContext_new () { /* link-only stub */ }
