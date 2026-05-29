@@ -141,10 +141,8 @@ BOOLEAN optSpeech;
 BOOLEAN optRemixMusic;
 int optWhichIntro;
 const char **optAddons;
-/* PlayerInput[NUM_PLAYERS] — real type is InputContext* (libs/input); the
- * seam doesn't pull that header, and it's only touched by SetPlayerInput,
- * which isn't reached at runtime (StartGame→0). Storage only. */
-void *PlayerInput[2];
+/* PlayerInput[NUM_PLAYERS] — now defined by uqm/battlecontrols.c (in KEEP),
+ * which also owns Human/ComputerInputContext_new. */
 SOUND MenuSounds;
 volatile int GameActive;
 
@@ -162,3 +160,17 @@ const BYTE *Elements;
 const PlanetFrame planet_array[1];
 const PlanetFrame *PlanData;
 volatile int MouseButtonDown;
+SOLARSYS_STATE *pSolarSysState;
+SIZE sinetab[];
+
+/* ExploreSolarSys — slice-5a behavioural stub. The real one (planets/solarsys.c,
+ * slice 5b) runs the interplanetary view until the player leaves, updating
+ * GLOBAL(CurrentActivity). A no-op would make starcon.c's game loop
+ * (do { ... ExploreSolarSys(); } while (!(CurrentActivity & CHECK_ABORT)))
+ * spin forever WITHOUT yielding, hanging the host. Setting CHECK_ABORT makes a
+ * NEW GAME run the full init chain, then cleanly tear down (UninitGameStructures
+ * /Clock/ClearPlayerInputAll) and return to the menu — a clean, non-hanging
+ * boundary for slice 5a. */
+void ExploreSolarSys (void) {
+    GLOBAL (CurrentActivity) |= CHECK_ABORT;
+}

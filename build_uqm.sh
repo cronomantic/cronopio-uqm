@@ -78,6 +78,25 @@ UQM_SRCS=(
   # selection (Melee/Credits/Introduction/SetupMenu/save-load) stay stubbed.
   "$US/uqm/restart.c"
   "$US/uqm/flash.c"
+  # Slice 5a: the NEW-GAME init chain. InitGameStructures (globdata.c, already
+  # above) drives InitSISContexts/DrawSISFrame (border.c) + planet/group/build
+  # data; clock.c/gameev.c own the game clock + initial events; cleanup.c owns
+  # UninitGameKernel. ExploreSolarSys/Battle stay stubbed (slice 5b). Goal:
+  # New Game runs the real init + draws the SIS frame, no trap.
+  "$US/uqm/clock.c"
+  "$US/uqm/gameev.c"
+  "$US/uqm/cleanup.c"
+  "$US/uqm/border.c"
+  "$US/uqm/state.c"
+  "$US/uqm/grpinfo.c"
+  "$US/uqm/build.c"
+  "$US/uqm/loadship.c"
+  # battlecontrols.c owns HumanInputContext_new/ComputerInputContext_new (+ the
+  # real PlayerInput[]); SetPlayerInputAll needs them to return non-NULL contexts
+  # or the new game aborts (explode). The battle/AI frameInput handlers it refs
+  # (computer_intelligence/frameInputHuman/select*/battleEndReady*) stay stubbed —
+  # only called during battle (slice 5b).
+  "$US/uqm/battlecontrols.c"
 )
 
 # libs/uio — the faithful UQM virtual filesystem (reads the .uqm content

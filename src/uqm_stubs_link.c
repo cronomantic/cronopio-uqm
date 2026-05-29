@@ -29,9 +29,19 @@ void InitVideoPlayer () { /* link-only stub */ }
  * OOB-trapped on every menu SELECT. */
 void *LoadSoundInstance () { return 0; }
 
-/* ---- input — FlushInput/UpdateInputState now REAL (uqm/gameinp.c). ---- */
-void HumanInputContext_new () { /* link-only stub */ }
-void ComputerInputContext_new () { /* link-only stub */ }
+/* ---- input — FlushInput/UpdateInputState now REAL (uqm/gameinp.c);
+ *      Human/ComputerInputContext_new + PlayerInput[] now REAL
+ *      (uqm/battlecontrols.c). ---- */
+/* battlecontrols.c's Human/ComputerInputHandlers tables initialise their
+ * frameInput/selectShip/battleEndReady members with these battle/AI handlers.
+ * The translator needs definitions to resolve the function-pointer
+ * initialisers, but they're only CALLED during battle (slice 5b). */
+void computer_intelligence () { /* link-only stub */ }
+void selectShipComputer () { /* link-only stub */ }
+void battleEndReadyComputer () { /* link-only stub */ }
+void frameInputHuman () { /* link-only stub */ }
+void selectShipHuman () { /* link-only stub */ }
+void battleEndReadyHuman () { /* link-only stub */ }
 
 /* SplashScreen(cb): the real one shows splash gfx then invokes the callback
  * (BackgroundInitKernel), which runs LoadMasterShipList + InitGameKernel. We
@@ -43,39 +53,30 @@ void SplashScreen (void (*DoProcessing)(DWORD TimeOut)) {
 }
 /* StartGame: now REAL — uqm/restart.c (the main menu state machine). */
 
-/* ---- game clock / init / gameplay subsystems (not compiled yet) ---- */
-void InitGameClock () { /* link-only stub */; }
-void UninitGameClock () { /* link-only stub */; }
-void SetGameClockRate () { /* link-only stub */; }
-void GameClockTick () { /* link-only stub */; }
-void AddInitialGameEvents () { /* link-only stub */; }
+/* ---- game clock / init / gameplay subsystems ----
+ * Slice 5a landed the NEW-GAME init chain: clock.c (InitGameClock/
+ * UninitGameClock/SetGameClockRate/GameClockTick), gameev.c
+ * (AddInitialGameEvents), cleanup.c (UninitGameKernel/FreeKernel/FreeGameData),
+ * border.c (InitSISContexts), state.c (Init/UninitPlanetInfo), grpinfo.c
+ * (Init/UninitGroupInfo), build.c (SetRaceAllied/CloneShipFragment/
+ * GetStarShipFromIndex), loadship.c (load_ship/free_ship). Those stubs are
+ * gone. The gameplay activities below (ExploreSolarSys/Battle/VisitStarBase/
+ * communication/...) stay stubbed — slice 5b. */
 void SetStatusMessageMode () { /* link-only stub */; }
 void InstallBombAtEarth () { /* link-only stub */; }
 void VisitStarBase () { /* link-only stub */; }
 void RaceCommunication () { /* link-only stub */; }
 void InitCommunication () { /* link-only stub */; }
 void DrawAutoPilotMessage () { /* link-only stub */; }
-void ExploreSolarSys () { /* link-only stub */; }
+/* ExploreSolarSys — behavioural stub in src/uqm_seam.c (needs GLOBAL/CHECK_ABORT
+ * from globdata.h): aborts the game loop so a NEW GAME runs the full init +
+ * teardown cycle and returns to the menu instead of spinning forever on a
+ * no-op (slice 5a). Real solar-system view is slice 5b. */
 void Battle () { /* link-only stub */; }
 void SetFlashRect () { /* link-only stub */; }
 void SeedUniverse () { /* link-only stub */; }
-void UninitGameKernel () { /* link-only stub */; }
-void FreeKernel () { /* link-only stub — real in uqm/cleanup.c (not in KEEP yet) */ }
-void InitSISContexts () { /* link-only stub */ }
-void InitPlanetInfo () { /* link-only stub */ }
-void InitGroupInfo () { /* link-only stub */ }
-void UninitGroupInfo () { /* link-only stub */ }
-void UninitPlanetInfo () { /* link-only stub */ }
-void SetRaceAllied () { /* link-only stub */ }
-void CloneShipFragment () { /* link-only stub */ }
-void GetStarShipFromIndex () { /* link-only stub */ }
 void InitStatusOffsets () { /* link-only stub */ }
 void InitSpace () { /* link-only stub */ }
-/* load_ship: no ship content packs yet → return NULL so LoadMasterShipList
- * cleanly skips each entry (builds an empty master_q) instead of dereferencing
- * a garbage RACE_DESC*. */
-void *load_ship () { return 0; }
-void free_ship () { /* link-only stub */ }
 
 /* ---- graphic / cel / font resource loaders — now REAL (resgfx.c / gfxload.c
  *      / font.c / loaddisp.c / filegfx.c compiled). So InstallGraphicResTypes,
@@ -108,7 +109,6 @@ void NotPositional () { /* link-only stub */ }
 void PlaySoundEffect () { /* link-only stub */ }
 void Victory () { /* link-only stub */ }
 void Credits () { /* link-only stub */ }
-void FreeGameData () { /* link-only stub */ }
 void StopMusic () { /* link-only stub */ }
 void DestroyMusic () { /* link-only stub */ }
 void SeedRandomNumbers () { /* link-only stub */ }
@@ -121,3 +121,24 @@ void DoPopupWindow () { /* link-only stub */ }
 /* FadeMusic returns a TimeCount (callers do SleepThreadUntil(FadeMusic(...)));
  * return 0 (a past deadline) so the sleep is a no-op. */
 uint32_t FadeMusic () { return 0; }
+void DrawStatusMessage () { /* link-only stub */ }
+void check_hyperspace_encounter () { /* link-only stub */ }
+void square_root () { /* link-only stub */ }
+void UninitVideoPlayer () { /* link-only stub */ }
+void UninitSound () { /* link-only stub */ }
+void FreeLanderData () { /* link-only stub */ }
+void FreeIPData () { /* link-only stub */ }
+void FreeHyperData () { /* link-only stub */ }
+void UninitSpace () { /* link-only stub */ }
+void DestroySound () { /* link-only stub */ }
+void DrawStarConBox () { /* link-only stub */ }
+void ClearSISRect () { /* link-only stub */ }
+void TFB_Random () { /* link-only stub */ }
+void planetOuterLocation () { /* link-only stub */ }
+void DeltaSISGauges () { /* link-only stub */ }
+void LoadCodeResInstance () { /* link-only stub */ }
+void CaptureCodeRes () { /* link-only stub */ }
+void load_animation () { /* link-only stub */ }
+void ReleaseCodeRes () { /* link-only stub */ }
+void DestroyCodeRes () { /* link-only stub */ }
+void free_image () { /* link-only stub */ }
