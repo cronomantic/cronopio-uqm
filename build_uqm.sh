@@ -148,6 +148,7 @@ GFX_SRCS=(
 PORT=(
   "$ROOT/src/uqm_seam.c"
   "$ROOT/src/uqm_stubs_link.c"
+  "$ROOT/src/vid_cron.c"
   "$ROOT/src/main_cron.c"
   "$SDK/lib/cvm_libc.c"
   "$SDK/lib/miniz.c"

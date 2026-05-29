@@ -26,6 +26,7 @@
 #include "libs/uio/fstypes.h"
 #include "libs/reslib.h"
 #include "libs/gfxlib.h"
+#include "vid_cron.h"
 
 /* Cron backend's scheduler entry — declared in
  * sc2/src/libs/threads/cron/cronthreads.h, mirrored here to avoid pulling
@@ -76,6 +77,7 @@ static void frame (void) {
      * implicit context, which becomes main_coro on the first swap). */
     ProcessThreadLifecycles ();
     Scheduler_CRON_RunFrame (10);  /* ~10 ms budget per frame */
+    cron_vid_present ();           /* downsample the 32bpp MAIN screen -> FB */
 }
 
 /* ---------------------------------------------------------------------- */
@@ -126,6 +128,7 @@ static void mount_content (void) {
 int main (void) {
     const char *msg = "cronopio-uqm spike: starting\n";
     cron_log (msg, 29);
+    cron_vid_init ();
     mount_content ();
     InitThreadSystem ();
 
