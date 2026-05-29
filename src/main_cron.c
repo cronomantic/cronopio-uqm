@@ -139,6 +139,15 @@ static void uqm_content_test (void) {
             "RES: index parsed; colortable.hangar=\"%s\" bogus=%s\n",
             t ? t : "(null)", bog ? bog : "(null,ok)");
     cron_log (r, rl);
+
+    /* Actually LOAD the BINTAB resource: dispatches to libs/strings'
+     * GetBinaryTableFileData → LoadResourceFromPath → reads base/ui/hangar.ct
+     * via uio (inflate) and parses it. Non-NULL = the type handler read real
+     * content end-to-end. */
+    void *rd = res_GetResource ("colortable.hangar");
+    cron_log (rd ? "RES: loaded colortable.hangar OK (BINTAB data)\n"
+                 : "RES: load colortable.hangar FAILED\n",
+              rd ? 46 : 39);
 }
 
 int main (void) {

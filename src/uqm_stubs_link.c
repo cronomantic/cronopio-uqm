@@ -78,9 +78,8 @@ void free_ship () { /* link-only stub */ }
 void InitSISContexts () { /* link-only stub */ }
 void InitPlanetInfo () { /* link-only stub */ }
 void InitGroupInfo () { /* link-only stub */ }
-void SetAbsStringTableIndex () { /* link-only stub */ }
-void GetStringAddress () { /* link-only stub */ }
-void utf8StringCopy () { /* link-only stub */ }
+/* SetAbsStringTableIndex / GetStringAddress — now real, libs/strings/strings.c
+ * utf8StringCopy — now real, libs/strings/unicode.c */
 void SetRaceAllied () { /* link-only stub */ }
 void CloneShipFragment () { /* link-only stub */ }
 void DestroyContext () { /* link-only stub */ }
@@ -89,13 +88,11 @@ void DestroyDrawable () { /* link-only stub */ }
 /* UninitQueue — now real, in uqm/displist.c (KEEP) */
 void UninitGroupInfo () { /* link-only stub */ }
 void UninitPlanetInfo () { /* link-only stub */ }
-void ReleaseStringTable () { /* link-only stub */ }
-void DestroyStringTable () { /* link-only stub */ }
+/* ReleaseStringTable / DestroyStringTable — now real, libs/strings/strings.c */
 void GetStarShipFromIndex () { /* link-only stub */ }
-void AllocStringTable () { /* link-only stub */ }
-void FreeStringTable () { /* link-only stub */ }
+/* AllocStringTable / FreeStringTable — now real, in libs/strings/strings.c */
 void InstallGraphicResTypes () { /* link-only stub */ }
-void InstallStringTableResType () { /* link-only stub */ }
+/* InstallStringTableResType — now real, in libs/strings/sresins.c */
 void InstallAudioResTypes () { /* link-only stub */ }
 void InstallVideoResType () { /* link-only stub */ }
 void InstallCodeResType () { /* link-only stub */ }

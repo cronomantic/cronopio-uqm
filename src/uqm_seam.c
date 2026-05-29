@@ -31,9 +31,10 @@
 /* ---------------------------------------------------------------------- */
 /* memlib */
 
-void *HMalloc (size_t size) { return malloc (size); }
-void *HCalloc (size_t size) { void *p = malloc (size); if (p) memset (p, 0, size); return p; }
-void  HFree   (void *p)     { free (p); }
+void *HMalloc  (size_t size)            { return malloc (size); }
+void *HCalloc  (size_t size)            { void *p = malloc (size); if (p) memset (p, 0, size); return p; }
+void *HRealloc (void *p, size_t size)   { return realloc (p, size); }
+void  HFree    (void *p)                { free (p); }
 
 /* ---------------------------------------------------------------------- */
 /* log — route through cron_log. Drop log_Debug to avoid spamming. */

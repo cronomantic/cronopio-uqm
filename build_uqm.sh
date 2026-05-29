@@ -116,6 +116,19 @@ RES_SRCS=(
   "$US/libs/resource/stringbank.c"
 )
 
+# libs/strings — string tables + the STRTAB/BINTAB/CONVERSATION resource type
+# handlers (InstallStringTableResType). Lets BINTAB/STRTAB resources resolve
+# and load (colormaps, race strings, etc.). Plain data parsing over uio; no
+# graphics. Unicode helpers included for the UTF-8 string ops.
+STR_SRCS=(
+  "$US/libs/strings/getstr.c"
+  "$US/libs/strings/sfileins.c"
+  "$US/libs/strings/sresins.c"
+  "$US/libs/strings/stringhashtable.c"
+  "$US/libs/strings/strings.c"
+  "$US/libs/strings/unicode.c"
+)
+
 # Our seam + cart entry + the libc + vendored miniz (zlib for uio's zip fs).
 PORT=(
   "$ROOT/src/uqm_seam.c"
@@ -141,6 +154,7 @@ echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
   "${UQM_SRCS[@]}" \
   "${UIO_SRCS[@]}" \
   "${RES_SRCS[@]}" \
+  "${STR_SRCS[@]}" \
   "${PORT[@]}" \
   --rom="$ROOT/content/uqm-0.8.0-content.uqm" \
   --heap-reserve=2M \
