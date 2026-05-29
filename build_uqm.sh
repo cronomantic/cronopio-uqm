@@ -146,6 +146,15 @@ GFX_SRCS=(
   "$US/libs/graphics/tfb_prim.c"
   "$US/libs/graphics/dcqueue.c"
   "$US/libs/graphics/bbox.c"
+  # GFX slice 3: cel/font resource loaders. resgfx installs the GFXRES/FONTRES
+  # type handlers; gfxload decodes .ani cel lists + font dirs (PNGs via
+  # sdluio_loadImage -> stb); font.c is the text/_text_blt layer; loaddisp +
+  # filegfx round out the graphic-resource I/O.
+  "$US/libs/graphics/resgfx.c"
+  "$US/libs/graphics/gfxload.c"
+  "$US/libs/graphics/font.c"
+  "$US/libs/graphics/loaddisp.c"
+  "$US/libs/graphics/filegfx.c"
 )
 
 # libs/graphics/sdl backend — GFX slice 2: UQM's real, stock canvas/primitives/

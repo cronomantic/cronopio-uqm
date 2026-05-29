@@ -49,6 +49,14 @@ extern void TFB_FlushGraphics (void);
 extern void cron_gfx_selftest (void);
 static int s_did_selftest;
 
+/* res_GetResource by name — proves the GFXRES/FONTRES handlers decode real
+ * content. Runs late (frame ~20) so InitKernel's InstallGraphicResTypes has
+ * run. RESOURCE is a resource-name string. */
+extern void *res_GetResource (const char *res);
+extern const char *res_GetResourceType (const char *res);
+static int s_frame_no;
+static int s_did_res_selftest;
+
 /* ---------------------------------------------------------------------- */
 /* Stub workers. Real Starcon2Main lives in sc2/src/uqm/starcon.c and is
  * thousands of lines + many subsystems we haven't compiled yet. For the
@@ -93,6 +101,16 @@ static void frame (void) {
     /* SLICE-2a: prove the backend renders. Once UQM's own drawing drives the
      * screen (StartGame TRUE), drop this. */
     if (!s_did_selftest) { cron_gfx_selftest (); s_did_selftest = 1; }
+
+    /* SLICE-3 derisk: once InitKernel has installed the GFXRES/FONTRES handlers
+     * (a few frames in), load a real font + cel by name to prove they decode. */
+    if (++s_frame_no == 20 && !s_did_res_selftest) {
+        void *fnt = res_GetResource ("comm.commander.font");
+        void *gfx = res_GetResource ("comm.arilou.graphics");
+        log_add (log_User, "RES: font(player.fon)=%s  cel(arilou.ani)=%s",
+                 fnt ? "OK" : "NULL", gfx ? "OK" : "NULL");
+        s_did_res_selftest = 1;
+    }
 
     TFB_FlushGraphics ();          /* drain DCQ -> render onto MAIN canvas */
     cron_vid_present ();           /* downsample the 32bpp MAIN screen -> FB */

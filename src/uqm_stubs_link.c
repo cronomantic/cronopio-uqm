@@ -76,21 +76,15 @@ void InitSpace () { /* link-only stub */ }
 void *load_ship () { return 0; }
 void free_ship () { /* link-only stub */ }
 
-/* ---- graphic / cel / font resource loaders (gfxload/font/resgfx/loaddisp/
- *      intersec — not compiled yet; the cel + font decode is the slice after
- *      the backend) ---- */
-void LoadGraphicInstance () { /* link-only stub */ }
-void InstallGraphicResTypes () { /* link-only stub */ }
+/* ---- graphic / cel / font resource loaders — now REAL (resgfx.c / gfxload.c
+ *      / font.c / loaddisp.c / filegfx.c compiled). So InstallGraphicResTypes,
+ *      LoadGraphicInstance, _Get/ReleaseCelData, _Get/ReleaseFontData,
+ *      _text_blt, TextRect, GetContextFontLeading[Width], LoadDisplayPixmap are
+ *      gone. Audio/video/code resource types still stubbed. ---- */
 void InstallAudioResTypes () { /* link-only stub */ }
 void InstallVideoResType () { /* link-only stub */ }
 void InstallCodeResType () { /* link-only stub */ }
-void LoadDisplayPixmap () { /* link-only stub */ }
-void _ReleaseCelData () { /* link-only stub */ }
-void GetContextFontLeading () { /* link-only stub */ }
-void GetContextFontLeadingWidth () { /* link-only stub */ }
-void TextRect () { /* link-only stub */ }
-void _text_blt () { /* link-only stub */ }
-void BoxIntersect () { /* link-only stub */ }
+void BoxIntersect () { /* link-only stub — intersec.c not compiled */ }
 
 /* ---- addons (not compiled) ---- */
 void loadAddon () { /* link-only stub */ }
