@@ -122,10 +122,12 @@ echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
   -D_POSIX_PATH_MAX=256 \
   -DMINIZ_NO_DEFLATE_APIS -DMINIZ_NO_ARCHIVE_APIS \
   -DMINIZ_NO_STDIO -DMINIZ_NO_TIME \
+  -DHAVE_ZIP \
   "${INCS[@]}" \
   "${UQM_SRCS[@]}" \
   "${UIO_SRCS[@]}" \
   "${PORT[@]}" \
+  --rom="$ROOT/content/uqm-0.8.0-content.uqm" \
   --heap-reserve=2M \
   --stack-reserve=512K \
   --title="UQM spike" \
