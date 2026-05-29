@@ -84,96 +84,49 @@ static void frame (void) {
  * deflated entry. Proves the whole faithful file stack works on real data
  * BEFORE we wire LoadKernel/graphics. Mirrors options.c mountContentDir,
  * but mounts the zip by known name (the regex-based scan is disabled). */
-static void uqm_content_test (void) {
+/* Replaces UQM's options.c prepareContentDir: mount the ROM-baked .uqm and
+ * set the global contentDir, so the real LoadKernel (setup.c) can run its
+ * loadIndices/LoadColorMap against it. The earlier per-layer validations
+ * (uio read, resource index parse, BINTAB load, CreateContext/Display) are
+ * retired now that LoadKernel exercises the whole stack for real. Screen
+ * dims are set by hand (320x240, UQM native) since the SDL backend's init
+ * (pure.c, which normally sets them) isn't compiled. */
+static void mount_content (void) {
     static uio_AutoMount *autoMount[] = { NULL };
+    extern uio_DirHandle *contentDir;       /* the seam's options.h global */
+    extern int ScreenWidth, ScreenHeight;
+    ScreenWidth = 320; ScreenHeight = 240;
+
     cron_rom_mount ("content/uqm-0.8.0-content.uqm");
     uio_init ();
     uio_Repository *repo = uio_openRepository (0);
     if (!repo) { cron_log ("FS: openRepository failed\n", 26); return; }
-
     uio_MountHandle *cm = uio_mountDir (repo, "/", uio_FSTYPE_STDIO, NULL, NULL,
             "content", autoMount, uio_MOUNT_TOP | uio_MOUNT_RDONLY, NULL);
     if (!cm) { cron_log ("FS: mount STDIO failed\n", 23); return; }
-
     uio_DirHandle *cd = uio_openDir (repo, "/", 0);
     if (!cd) { cron_log ("FS: openDir / failed\n", 21); return; }
-
-    /* Mount the baked .uqm ZIP by known name (the regex-based scan in
-     * options.c mountDirZips is disabled / not compiled). NOTE: parsing the
-     * 10559-entry central directory under the interpreted VM is SLOW
-     * (~minutes headless) — a known perf item, fine for this validation. */
+    /* Mount the .uqm ZIP by known name (options.c's regex-based scan is
+     * disabled / not compiled). */
     uio_MountHandle *zm = uio_mountDir (repo, "/", uio_FSTYPE_ZIP, cd,
             "uqm-0.8.0-content.uqm", "/", autoMount,
             uio_MOUNT_BELOW | uio_MOUNT_RDONLY, cm);
     if (!zm) { cron_log ("FS: mount ZIP failed\n", 21); return; }
+    contentDir = uio_openDir (repo, "/", 0);
+    cron_log (contentDir ? "FS: content mounted\n" : "FS: content mount FAILED\n",
+              contentDir ? 20 : 25);
 
-    uio_DirHandle *content = uio_openDir (repo, "/", 0);
-    uio_Handle *h = uio_open (content ? content : cd, "uqm.rmp", O_RDONLY, 0);
-    if (!h) { cron_log ("FS: open uqm.rmp failed\n", 24); return; }
-
-    char buf[17]; memset (buf, 0, sizeof buf);
-    ssize_t n = uio_read (h, buf, 16);
-    char m[96];
-    int ml = snprintf (m, sizeof m,
-            "FS: read uqm.rmp -> %d bytes: \"%s\" (expect colortable.hanga)\n",
-            (int)n, buf);
-    cron_log (m, ml);
-    uio_close (h);
-
-    /* Resource-layer validation: parse the .rmp resource index (963 entries)
-     * via libs/resource over uio, then look a resource up by name. This is
-     * the next layer above raw uio — InitResourceSystem registers the type
-     * vtables (graphic/audio/video handlers are stubbed; not invoked here),
-     * LoadResourceIndex parses uqm.rmp into a name->{type,path} map. */
-    extern uio_DirHandle *contentDir;       /* the seam's options.h global */
-    contentDir = content;
-    InitResourceSystem ();
-    LoadResourceIndex (contentDir, "uqm.rmp", (const char *)0);
-    /* A real registered resource resolves (non-NULL); a bogus name does not.
-     * type is UNKNOWNRES (not BINTAB) until libs/strings InstallStringTable-
-     * ResType lands — registering BINTAB/STRTAB is the next layer; here we
-     * only prove the 963-entry index parsed and resources are queryable. */
-    const char *t   = res_GetResourceType ("colortable.hangar");
-    const char *bog = res_GetResourceType ("no.such.resource");
-    char r[112];
-    int rl = snprintf (r, sizeof r,
-            "RES: index parsed; colortable.hangar=\"%s\" bogus=%s\n",
-            t ? t : "(null)", bog ? bog : "(null,ok)");
-    cron_log (r, rl);
-
-    /* Actually LOAD the BINTAB resource: dispatches to libs/strings'
-     * GetBinaryTableFileData → LoadResourceFromPath → reads base/ui/hangar.ct
-     * via uio (inflate) and parses it. Non-NULL = the type handler read real
-     * content end-to-end. */
-    void *rd = res_GetResource ("colortable.hangar");
-    cron_log (rd ? "RES: loaded colortable.hangar OK (BINTAB data)\n"
-                 : "RES: load colortable.hangar FAILED\n",
-              rd ? 46 : 39);
-
-    /* Graphics-layer validation: the context/drawable/frame core with a
-     * no-op TFB backend. Mirrors LoadKernel setup.c:96-107 (sans the real
-     * renderer). ScreenWidth/Height are normally set by the SDL backend's
-     * init (pure.c); we set them by hand (320x240, UQM native) since that
-     * backend isn't compiled. The screen FRAME needs no backend image. */
-    extern int ScreenWidth, ScreenHeight;
-    ScreenWidth = 320; ScreenHeight = 240;
-    CONTEXT sc = CreateContext ("ScreenContext");
-    SIZE gw = 0, gh = 0;
-    DRAWABLE disp = CreateDisplay (WANT_MASK | WANT_PIXMAP, &gw, &gh);
-    FRAME scr = CaptureDrawable (disp);
-    SetContext (sc);
-    SetContextFGFrame (scr);
-    char g[96];
-    int gl = snprintf (g, sizeof g,
-            "GFX: ctx=%d display %dx%d screenFrame=%d (expect 320x240)\n",
-            sc ? 1 : 0, (int)gw, (int)gh, scr ? 1 : 0);
-    cron_log (g, gl);
+    /* InitColorMaps creates the colormap mutex + tables. Normally called by
+     * the SDL backend's TFB_InitGraphics (not compiled), so the seam does it
+     * — else SetColorMap (in real LoadKernel) locks an uninitialised mutex. */
+    extern void InitColorMaps (void);
+    InitColorMaps ();
 }
 
 int main (void) {
     const char *msg = "cronopio-uqm spike: starting\n";
     cron_log (msg, 29);
-    uqm_content_test ();
+    mount_content ();
     InitThreadSystem ();
 
     /* Use StartThread, NOT CreateThread — the latter blocks the caller on a
@@ -186,7 +139,10 @@ int main (void) {
      * main loop and we don't need the heartbeat-progress signal. */
     StartThread (worker_a,     NULL, 64 * 1024, "worker_a");
     StartThread (worker_b,     NULL, 64 * 1024, "worker_b");
-    StartThread (Starcon2Main, NULL, 64 * 1024, "Starcon2Main");
+    /* Starcon2Main needs a big stack: LoadKernel loads + inflates + parses
+     * resources (the colormap, later fonts/graphics) inline, which overflowed
+     * a 64KB coro stack (LoadColorMap silently returned NULL → fatal). */
+    StartThread (Starcon2Main, NULL, 512 * 1024, "Starcon2Main");
 
     cron_set_frame (frame);
     return 0;

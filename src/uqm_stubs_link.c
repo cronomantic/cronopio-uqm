@@ -12,12 +12,10 @@
 void FlushInput () { /* link-only stub */; }
 void TFB_DrawScreen_ReinitVideo () { /* link-only stub */; }
 void initAudio () { /* link-only stub */; }
-/* LoadKernel returns BOOLEAN — fake TRUE so Starcon2Main proceeds past
- * its content-missing fatal. The real impl loads content packs +
- * inits sound/gfx subsystems; we just need it to "succeed" so we can
- * see what fails NEXT. eax-trick: return value is in R0 per ABI; emit
- * a tiny inline asm-free body that sets it to 1 via a typed return. */
-int LoadKernel (int kernel, int gfxdriver) { (void)kernel; (void)gfxdriver; return 1; }
+/* LoadKernel / InitGameKernel / InitContexts / SetPlayerInputAll /
+ * ClearPlayerInputAll / InitPlayerInput / initIO — now REAL, in uqm/setup.c
+ * (the forced-TRUE LoadKernel stub is gone; the real one loads the colormap
+ * + creates the screen context from mounted content). */
 /* SplashScreen(cb): the real one shows splash gfx then invokes the
  * callback (BackgroundInitKernel) which runs LoadMasterShipList +
  * InitGameKernel. We don't draw the splash yet, but we MUST invoke the
@@ -30,7 +28,7 @@ void SplashScreen (void (*DoProcessing)(DWORD TimeOut)) {
  * return FALSE — Starcon2Main's `while (StartGame())` loop exits cleanly
  * instead of spinning forever on a garbage return value. */
 int StartGame () { return 0; }
-void SetPlayerInputAll () { /* link-only stub */; }
+/* SetPlayerInputAll — now real, uqm/setup.c */
 /* InitGameStructures — now real, in uqm/globdata.c (KEEP) */
 void InitGameClock () { /* link-only stub */; }
 void AddInitialGameEvents () { /* link-only stub */; }
@@ -48,12 +46,12 @@ void InitCommunication () { /* link-only stub */; }
 void StopSound () { /* link-only stub */; }
 void UninitGameClock () { /* link-only stub */; }
 /* UninitGameStructures — now real, in uqm/globdata.c (KEEP) */
-void ClearPlayerInputAll () { /* link-only stub */; }
+/* ClearPlayerInputAll — now real, uqm/setup.c */
 void UninitGameKernel () { /* link-only stub */; }
 /* FreeMasterShipList — now real, in uqm/master.c (KEEP) */
 void FreeKernel () { /* link-only stub — real in uqm/cleanup.c (not in KEEP yet) */ }
 /* LoadMasterShipList — now real, in uqm/master.c (KEEP) */
-void InitGameKernel () { /* link-only stub */; }
+/* InitGameKernel — now real, uqm/setup.c */
 void UpdateInputState () { /* link-only stub */; }
 void GameClockTick () { /* link-only stub */; }
 /* setGameState — now real, in uqm/globdata.c (KEEP) */
@@ -128,3 +126,16 @@ void TFB_Prim_Line () { /* link-only stub */ }
 void TextRect () { /* link-only stub */ }
 void _text_blt () { /* link-only stub */ }
 void TFB_Prim_Rect () { /* link-only stub */ }
+void FreeNativePalette () { /* link-only stub */ }
+void GetNativePaletteColor () { /* link-only stub */ }
+void SetNativePaletteColor () { /* link-only stub */ }
+void AllocNativePalette () { /* link-only stub */ }
+void InitSound () { /* link-only stub */ }
+void InitVideoPlayer () { /* link-only stub */ }
+void loadAddon () { /* link-only stub */ }
+void prepareAddons () { /* link-only stub */ }
+void LoadSoundInstance () { /* link-only stub */ }
+void InitStatusOffsets () { /* link-only stub */ }
+void InitSpace () { /* link-only stub */ }
+void HumanInputContext_new () { /* link-only stub */ }
+void ComputerInputContext_new () { /* link-only stub */ }

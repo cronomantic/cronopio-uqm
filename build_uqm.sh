@@ -68,6 +68,7 @@ UQM_SRCS=(
   "$US/uqm/globdata.c"
   "$US/uqm/displist.c"
   "$US/uqm/master.c"
+  "$US/uqm/setup.c"
 )
 
 # libs/uio — the faithful UQM virtual filesystem (reads the .uqm content
@@ -140,6 +141,7 @@ GFX_SRCS=(
   "$US/libs/graphics/drawable.c"
   "$US/libs/graphics/frame.c"
   "$US/libs/graphics/pixmap.c"
+  "$US/libs/graphics/cmap.c"
 )
 
 # Our seam + cart entry + the libc + vendored miniz (zlib for uio's zip fs).
@@ -171,7 +173,7 @@ echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
   "${GFX_SRCS[@]}" \
   "${PORT[@]}" \
   --rom="$ROOT/content/uqm-0.8.0-content.uqm" \
-  --heap-reserve=2M \
+  --heap-reserve=8M \
   --stack-reserve=512K \
   --title="UQM spike" \
   --author="Cronomantic (Cronopio port)" \

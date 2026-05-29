@@ -113,6 +113,18 @@ void   Async_process            (void) { }
 uint32 Async_timeBeforeNextMs   (void) { return 1000u; }
 
 /* ---------------------------------------------------------------------- */
+/* loadIndices — UQM's real one (options.c) scans the content dir for *.rmp
+ * with a POSIX regex (match_MATCH_REGEX), which we disabled and don't
+ * compile options.c. The base content has a single index, uqm.rmp, so load
+ * it directly by name. Returns the count loaded. */
+#include "libs/reslib.h"
+#include "libs/uio.h"
+int loadIndices (uio_DirHandle *dir) {
+    LoadResourceIndex (dir, "uqm.rmp", (const char *)0);
+    return 1;
+}
+
+/* ---------------------------------------------------------------------- */
 /* STUB_EXTERNS_START — auto-discovered externs from tools/stub_externs.sh.
  * Each entry comes from a translator "extern not supported" error;
  * the stub gives the symbol storage so the build advances. These come
@@ -122,12 +134,19 @@ int GfxFlags;
  * in libs/graphics/gfx_common.c (in KEEP). */
 int snddriver, soundflags;
 ACTIVITY NextActivity;
-ACTIVITY LastActivity;
-FRAME FlagStatFrame;
-FRAME MiscDataFrame;
-FRAME FontGradFrame;
-/* master_q — now defined by uqm/master.c (in KEEP). */
-STRING GameStrings;
+/* LastActivity / FlagStatFrame / MiscDataFrame / FontGradFrame / GameStrings /
+ * Screen — now defined by uqm/setup.c (in KEEP).
+ * master_q — defined by uqm/master.c (in KEEP). */
 STAR_DESC *CurStarDescPtr;
 PRIMITIVE DisplayArray[MAX_DISPLAY_PRIMS];
-FRAME Screen;
+volatile int QuitPosted;
+BOOLEAN opt3doMusic;
+BOOLEAN optSpeech;
+BOOLEAN optRemixMusic;
+int optWhichIntro;
+const char **optAddons;
+/* PlayerInput[NUM_PLAYERS] — real type is InputContext* (libs/input); the
+ * seam doesn't pull that header, and it's only touched by SetPlayerInput,
+ * which isn't reached at runtime (StartGame→0). Storage only. */
+void *PlayerInput[2];
+SOUND MenuSounds;
