@@ -25,6 +25,7 @@
 #include "libs/uio.h"
 #include "libs/uio/fstypes.h"
 #include "libs/reslib.h"
+#include "libs/gfxlib.h"
 
 /* Cron backend's scheduler entry — declared in
  * sc2/src/libs/threads/cron/cronthreads.h, mirrored here to avoid pulling
@@ -148,6 +149,25 @@ static void uqm_content_test (void) {
     cron_log (rd ? "RES: loaded colortable.hangar OK (BINTAB data)\n"
                  : "RES: load colortable.hangar FAILED\n",
               rd ? 46 : 39);
+
+    /* Graphics-layer validation: the context/drawable/frame core with a
+     * no-op TFB backend. Mirrors LoadKernel setup.c:96-107 (sans the real
+     * renderer). ScreenWidth/Height are normally set by the SDL backend's
+     * init (pure.c); we set them by hand (320x240, UQM native) since that
+     * backend isn't compiled. The screen FRAME needs no backend image. */
+    extern int ScreenWidth, ScreenHeight;
+    ScreenWidth = 320; ScreenHeight = 240;
+    CONTEXT sc = CreateContext ("ScreenContext");
+    SIZE gw = 0, gh = 0;
+    DRAWABLE disp = CreateDisplay (WANT_MASK | WANT_PIXMAP, &gw, &gh);
+    FRAME scr = CaptureDrawable (disp);
+    SetContext (sc);
+    SetContextFGFrame (scr);
+    char g[96];
+    int gl = snprintf (g, sizeof g,
+            "GFX: ctx=%d display %dx%d screenFrame=%d (expect 320x240)\n",
+            sc ? 1 : 0, (int)gw, (int)gh, scr ? 1 : 0);
+    cron_log (g, gl);
 }
 
 int main (void) {

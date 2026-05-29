@@ -118,9 +118,8 @@ uint32 Async_timeBeforeNextMs   (void) { return 1000u; }
  * the stub gives the symbol storage so the build advances. These come
  * out as the real owning TUs land in build_uqm.sh's KEEP list. */
 int GfxFlags;
-int GraphicsDriver;
-int ScreenWidthActual;
-int ScreenHeightActual;
+/* GraphicsDriver / ScreenWidth(Actual) / ScreenHeight(Actual) — now real,
+ * in libs/graphics/gfx_common.c (in KEEP). */
 int snddriver, soundflags;
 ACTIVITY NextActivity;
 ACTIVITY LastActivity;
@@ -132,5 +131,3 @@ STRING GameStrings;
 STAR_DESC *CurStarDescPtr;
 PRIMITIVE DisplayArray[MAX_DISPLAY_PRIMS];
 FRAME Screen;
-int ScreenWidth;
-int ScreenHeight;

@@ -129,6 +129,19 @@ STR_SRCS=(
   "$US/libs/strings/unicode.c"
 )
 
+# libs/graphics core — the platform-independent context/drawable/frame layer
+# + gfx_common globals (ScreenWidth/Height live here). The TFB renderer +
+# canvas + DCQ + SDL backend (sdl/) are NOT compiled; their entry points are
+# no-op link stubs (chosen approach: boot the game LOGIC with no pixels yet,
+# then add a real backend later). A SCREEN_DRAWABLE needs no backend image.
+GFX_SRCS=(
+  "$US/libs/graphics/gfx_common.c"
+  "$US/libs/graphics/context.c"
+  "$US/libs/graphics/drawable.c"
+  "$US/libs/graphics/frame.c"
+  "$US/libs/graphics/pixmap.c"
+)
+
 # Our seam + cart entry + the libc + vendored miniz (zlib for uio's zip fs).
 PORT=(
   "$ROOT/src/uqm_seam.c"
@@ -155,6 +168,7 @@ echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
   "${UIO_SRCS[@]}" \
   "${RES_SRCS[@]}" \
   "${STR_SRCS[@]}" \
+  "${GFX_SRCS[@]}" \
   "${PORT[@]}" \
   --rom="$ROOT/content/uqm-0.8.0-content.uqm" \
   --heap-reserve=2M \

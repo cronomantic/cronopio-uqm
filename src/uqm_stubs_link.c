@@ -59,11 +59,9 @@ void GameClockTick () { /* link-only stub */; }
 /* setGameState — now real, in uqm/globdata.c (KEEP) */
 void SeedUniverse () { /* link-only stub */; }
 void LoadGraphicInstance () { /* link-only stub */ }
-void CaptureDrawable () { /* link-only stub */ }
-void CreateContextAux () { /* link-only stub */ }
-void SetContext () { /* link-only stub */ }
-void SetContextFGFrame () { /* link-only stub */ }
-void SetContextClipRect () { /* link-only stub */ }
+/* CaptureDrawable — now real, in libs/graphics/pixmap.c
+ * CreateContextAux / SetContext / SetContextClipRect / DestroyContext —
+ * now real, in libs/graphics/context.c */
 /* InitQueue — now real, in uqm/displist.c (KEEP) */
 /* AllocLink — now real, in uqm/displist.c (KEEP) */
 /* FindMasterShip / FindMasterShipIndex / GetShipCostFromIndex /
@@ -82,9 +80,8 @@ void InitGroupInfo () { /* link-only stub */ }
  * utf8StringCopy — now real, libs/strings/unicode.c */
 void SetRaceAllied () { /* link-only stub */ }
 void CloneShipFragment () { /* link-only stub */ }
-void DestroyContext () { /* link-only stub */ }
-void ReleaseDrawable () { /* link-only stub */ }
-void DestroyDrawable () { /* link-only stub */ }
+/* ReleaseDrawable — now real, in libs/graphics/pixmap.c */
+/* SetContextFGFrame / DestroyDrawable — now real, in libs/graphics/{context,drawable}.c */
 /* UninitQueue — now real, in uqm/displist.c (KEEP) */
 void UninitGroupInfo () { /* link-only stub */ }
 void UninitPlanetInfo () { /* link-only stub */ }
@@ -96,3 +93,38 @@ void InstallGraphicResTypes () { /* link-only stub */ }
 void InstallAudioResTypes () { /* link-only stub */ }
 void InstallVideoResType () { /* link-only stub */ }
 void InstallCodeResType () { /* link-only stub */ }
+void TFB_DrawScreen_Copy () { /* link-only stub */ }
+void TFB_BatchGraphics () { /* link-only stub */ }
+void TFB_UnbatchGraphics () { /* link-only stub */ }
+void TFB_DrawScreen_WaitForSignal () { /* link-only stub */ }
+void TFB_UploadTransitionScreen () { /* link-only stub */ }
+void TFB_DrawImage_Delete () { /* link-only stub */ }
+void GetContextFontLeading () { /* link-only stub */ }
+void GetContextFontLeadingWidth () { /* link-only stub */ }
+void TFB_DrawScreen_DeleteImage () { /* link-only stub */ }
+void TFB_DrawImage_CreateForScreen () { /* link-only stub */ }
+void TFB_DrawImage_Image () { /* link-only stub */ }
+void TFB_DrawImage_Rect () { /* link-only stub */ }
+void BoxIntersect () { /* link-only stub */ }
+void LoadDisplayPixmap () { /* link-only stub */ }
+void _ReleaseCelData () { /* link-only stub */ }
+void TFB_DrawCanvas_New_TrueColor () { /* link-only stub */ }
+void TFB_DrawImage_New () { /* link-only stub */ }
+void TFB_DrawImage_New_Rotated () { /* link-only stub */ }
+void TFB_DrawCanvas_SetTransparentColor () { /* link-only stub */ }
+void TFB_DrawCanvas_GetPixel () { /* link-only stub */ }
+void TFB_DrawImage_CopyRect () { /* link-only stub */ }
+/* GetFrameParentDrawable — now real, in libs/graphics/pixmap.c */
+void TFB_DrawCanvas_Rescale_Nearest () { /* link-only stub */ }
+void TFB_DrawCanvas_GetPixelColors () { /* link-only stub */ }
+void TFB_DrawCanvas_SetPixelColors () { /* link-only stub */ }
+void TFB_DrawCanvas_GetPixelIndexes () { /* link-only stub */ }
+void TFB_DrawCanvas_SetPixelIndexes () { /* link-only stub */ }
+void TFB_Prim_FillRect () { /* link-only stub */ }
+void TFB_Prim_Point () { /* link-only stub */ }
+void TFB_Prim_Stamp () { /* link-only stub */ }
+void TFB_Prim_StampFill () { /* link-only stub */ }
+void TFB_Prim_Line () { /* link-only stub */ }
+void TextRect () { /* link-only stub */ }
+void _text_blt () { /* link-only stub */ }
+void TFB_Prim_Rect () { /* link-only stub */ }
