@@ -37,6 +37,18 @@ extern uint32_t Scheduler_CRON_RunFrame (uint32_t tick_budget_ms);
  * main "thread" each frame for StartThread() requests to actually spawn. */
 extern void ProcessThreadLifecycles (void);
 
+/* TFB draw-command queue drain (libs/graphics/dcqueue.c). UQM threads enqueue
+ * draw commands; the "main thread" — here the host frame — drains them onto the
+ * 32bpp screen canvas. Its empty-queue path calls TaskSwitch(), which is a
+ * safe no-op from the host context (cronthreads guards s_current == NULL). */
+extern void TFB_FlushGraphics (void);
+
+/* GFX slice-2a backend self-test (src/sdl_compat.c): draws a pattern onto the
+ * MAIN screen through the real TFB_DrawCanvas_* path, proving the 32bpp canvas
+ * rendering reaches the framebuffer. */
+extern void cron_gfx_selftest (void);
+static int s_did_selftest;
+
 /* ---------------------------------------------------------------------- */
 /* Stub workers. Real Starcon2Main lives in sc2/src/uqm/starcon.c and is
  * thousands of lines + many subsystems we haven't compiled yet. For the
@@ -77,6 +89,12 @@ static void frame (void) {
      * implicit context, which becomes main_coro on the first swap). */
     ProcessThreadLifecycles ();
     Scheduler_CRON_RunFrame (10);  /* ~10 ms budget per frame */
+
+    /* SLICE-2a: prove the backend renders. Once UQM's own drawing drives the
+     * screen (StartGame TRUE), drop this. */
+    if (!s_did_selftest) { cron_gfx_selftest (); s_did_selftest = 1; }
+
+    TFB_FlushGraphics ();          /* drain DCQ -> render onto MAIN canvas */
     cron_vid_present ();           /* downsample the 32bpp MAIN screen -> FB */
 }
 

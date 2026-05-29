@@ -131,10 +131,9 @@ STR_SRCS=(
 )
 
 # libs/graphics core — the platform-independent context/drawable/frame layer
-# + gfx_common globals (ScreenWidth/Height live here). The TFB renderer +
-# canvas + DCQ + SDL backend (sdl/) are NOT compiled; their entry points are
-# no-op link stubs (chosen approach: boot the game LOGIC with no pixels yet,
-# then add a real backend later). A SCREEN_DRAWABLE needs no backend image.
+# + gfx_common globals (ScreenWidth/Height live here) + the TFB front-end:
+# tfb_draw.c / tfb_prim.c enqueue draw commands; dcqueue.c drains them and
+# calls the backend's TFB_DrawCanvas_*; bbox.c tracks dirty regions.
 GFX_SRCS=(
   "$US/libs/graphics/gfx_common.c"
   "$US/libs/graphics/context.c"
@@ -142,12 +141,31 @@ GFX_SRCS=(
   "$US/libs/graphics/frame.c"
   "$US/libs/graphics/pixmap.c"
   "$US/libs/graphics/cmap.c"
+  "$US/libs/graphics/tfb_draw.c"
+  "$US/libs/graphics/tfb_prim.c"
+  "$US/libs/graphics/dcqueue.c"
+  "$US/libs/graphics/bbox.c"
+)
+
+# libs/graphics/sdl backend — GFX slice 2: UQM's real, stock canvas/primitives/
+# rotozoom rendering, compiled against the minimal SDL_Surface shim
+# (compat/SDL.h + src/sdl_compat.c). These push the actual pixels into the
+# 32bpp screen canvases, which vid_cron downsamples to the 8bpp framebuffer.
+# NOTE: sdl/rotozoom.c is intentionally NOT compiled — it needs alloca (risky
+# on the VM coro stacks) and is only used for rotated melee ship sprites, not
+# menus/UI. rotateSurface/rotozoomSurfaceSize are stubbed (identity) in
+# sdl_compat.c; revisit when melee lands.
+GFXSDL_SRCS=(
+  "$US/libs/graphics/sdl/canvas.c"
+  "$US/libs/graphics/sdl/primitives.c"
+  "$US/libs/graphics/sdl/palette.c"
 )
 
 # Our seam + cart entry + the libc + vendored miniz (zlib for uio's zip fs).
 PORT=(
   "$ROOT/src/uqm_seam.c"
   "$ROOT/src/uqm_stubs_link.c"
+  "$ROOT/src/sdl_compat.c"
   "$ROOT/src/vid_cron.c"
   "$ROOT/src/main_cron.c"
   "$SDK/lib/cvm_libc.c"
@@ -172,6 +190,7 @@ echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
   "${RES_SRCS[@]}" \
   "${STR_SRCS[@]}" \
   "${GFX_SRCS[@]}" \
+  "${GFXSDL_SRCS[@]}" \
   "${PORT[@]}" \
   --rom="$ROOT/content/uqm-0.8.0-content.uqm" \
   --heap-reserve=8M \
