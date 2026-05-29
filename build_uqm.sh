@@ -55,6 +55,7 @@ INCS=(
   -I "$RT"
   -I "$US"
   -I "$US/libs"
+  -I "$US/libs/uio"
 )
 
 # UQM translation units we compile this round. Keep MINIMAL — just enough
@@ -69,12 +70,45 @@ UQM_SRCS=(
   "$US/uqm/master.c"
 )
 
-# Our seam + cart entry + the libc.
+# libs/uio — the faithful UQM virtual filesystem (reads the .uqm content
+# packs, which are ZIPs). Bring-up in progress: backed on our libc stdio +
+# cron_rom; the zip layer needs a zlib inflate (TBD). Listed separately so
+# the gap-discovery loops can churn through it.
+UIO_SRCS=(
+  "$US/libs/uio/charhashtable.c"
+  "$US/libs/uio/defaultfs.c"
+  "$US/libs/uio/fileblock.c"
+  "$US/libs/uio/fstypes.c"
+  "$US/libs/uio/gphys.c"
+  "$US/libs/uio/hashtable.c"
+  "$US/libs/uio/io.c"
+  "$US/libs/uio/ioaux.c"
+  "$US/libs/uio/match.c"
+  "$US/libs/uio/mount.c"
+  "$US/libs/uio/mounttree.c"
+  "$US/libs/uio/paths.c"
+  "$US/libs/uio/physical.c"
+  "$US/libs/uio/uiostream.c"
+  "$US/libs/uio/uioutils.c"
+  "$US/libs/uio/utils.c"
+  "$US/libs/uio/stdio/stdio.c"   # WIP: needs <dirent.h> (opendir/readdir)
+                                 #      backed by the RAM-FS / cron_rom
+  "$US/libs/uio/zip/zip.c"       # WIP: needs a zlib inflate
+  "$US/libs/file/files.c"
+  # dirs.c / temp.c — POSIX user home/config/temp dir resolution (pwd.h,
+  # getpwuid). The cart hand-sets content/config/save paths via the seam,
+  # so these are intentionally NOT compiled.
+  # "$US/libs/file/dirs.c"
+  # "$US/libs/file/temp.c"
+)
+
+# Our seam + cart entry + the libc + vendored miniz (zlib for uio's zip fs).
 PORT=(
   "$ROOT/src/uqm_seam.c"
   "$ROOT/src/uqm_stubs_link.c"
   "$ROOT/src/main_cron.c"
   "$SDK/lib/cvm_libc.c"
+  "$SDK/lib/miniz.c"
 )
 
 echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
@@ -84,8 +118,13 @@ echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
 # cronopio-port branch of the fork).
 "$CC" \
   -DCRONOPIO \
+  -D_POSIX_NAME_MAX=255 \
+  -D_POSIX_PATH_MAX=256 \
+  -DMINIZ_NO_DEFLATE_APIS -DMINIZ_NO_ARCHIVE_APIS \
+  -DMINIZ_NO_STDIO -DMINIZ_NO_TIME \
   "${INCS[@]}" \
   "${UQM_SRCS[@]}" \
+  "${UIO_SRCS[@]}" \
   "${PORT[@]}" \
   --heap-reserve=2M \
   --stack-reserve=512K \
