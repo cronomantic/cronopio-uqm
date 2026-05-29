@@ -109,13 +109,16 @@ static void frame (void) {
         void *gfx = res_GetResource ("comm.arilou.graphics");
         log_add (log_User, "RES: font(player.fon)=%s  cel(arilou.ani)=%s",
                  fnt ? "OK" : "NULL", gfx ? "OK" : "NULL");
-        /* SLICE-4a: draw a REAL UQM screen (the new-game menu background) onto
-         * the screen context via the real Context -> DrawStamp -> DCQ path, to
-         * prove UQM's own drawing (not just direct-canvas self-tests) reaches
-         * the framebuffer. */
-        extern void cron_draw_menu_test (void);
-        cron_draw_menu_test ();
+        /* SLICE-4: load the real new-game menu (navigable demo, see below). */
+        extern void cron_menu_init (void);
+        cron_menu_init ();
         s_did_res_selftest = 1;
+    }
+
+    /* SLICE-4b: run the navigable menu demo every frame once loaded. */
+    {
+        extern void cron_menu_frame (int frame_no);
+        cron_menu_frame (s_frame_no);
     }
 
     TFB_FlushGraphics ();          /* drain DCQ -> render onto MAIN canvas */
@@ -172,35 +175,77 @@ static void mount_content (void) {
     if (contentDir) cron_img_selftest (contentDir);
 }
 
-/* SLICE-4a: draw the real new-game menu background through UQM's own drawing
- * API (SetContext + LoadGraphic + DrawStamp), which enqueues onto the DCQ that
- * frame() drains onto the MAIN canvas. Proves the full draw path with real
- * content; bypasses restart.c (whose menu state machine + huge dep tree is a
- * later slice). */
-void cron_draw_menu_test (void) {
+/* SLICE-4b: a navigable demo of the real new-game menu, drawn through UQM's
+ * own drawing API. graphics.newgame (base/ui/newgame.ani) has 6 frames:
+ *   frame 0      = full-screen background ("New Game / Load Game / ..."),
+ *   frames 1..5  = the highlight overlay for each option (positioned by each
+ *                  frame's hotspot).
+ * We draw frame 0 + the highlight for the current selection, move the
+ * selection with the 12-button pad (UP/DOWN, edge-detected by the host), and
+ * auto-cycle it so the highlight is observable headless. This proves multi-
+ * frame cel rendering + pad input reaching the cart + selection-driven redraw.
+ *
+ * This is a DEMO menu (no game action on select yet) -- the faithful menu state
+ * machine lives in uqm/restart.c (RestartMenu/DoRestart + the Flash overlay +
+ * DoInput + gameinp.c PulsedInputState), whose Melee/Credits/Intro/Setup/save
+ * dep tree is the next slice. */
+#define CRON_MENU_OPTS 5
+
+static FRAME s_menu_f0;       /* frame 0 = background; 1..5 = highlights */
+static int   s_menu_sel;
+static int   s_menu_ready;
+
+void cron_menu_init (void) {
+    extern CONTEXT ScreenContext;
+    DRAWABLE d;
+    if (!ScreenContext) { log_add (log_User, "MENU: no ScreenContext"); return; }
+    d = (DRAWABLE)LoadGraphicInstance ("graphics.newgame");
+    s_menu_f0 = CaptureDrawable (d);
+    if (!s_menu_f0) { log_add (log_User, "MENU: load graphics.newgame FAILED"); return; }
+    s_menu_ready = 1;
+    log_add (log_User, "MENU: loaded graphics.newgame (navigable demo)");
+}
+
+static void cron_menu_draw (void) {
     extern CONTEXT ScreenContext;
     extern int ScreenWidth, ScreenHeight;
-    DRAWABLE d;
-    FRAME f;
     RECT r;
     STAMP s;
 
-    if (!ScreenContext) { log_add (log_User, "MENU: no ScreenContext"); return; }
-
-    d = (DRAWABLE)LoadGraphicInstance ("graphics.newgame");
-    f = CaptureDrawable (d);
-    if (!f) { log_add (log_User, "MENU: load graphics.newgame FAILED"); return; }
-
-    GetFrameRect (f, &r);
     SetContext (ScreenContext);
     SetContextBackGroundColor (BUILD_COLOR_RGBA (0, 0, 0, 255));
     ClearDrawable ();
+
+    /* background (centered; it is full 320x240, so this is (0,0)) */
+    GetFrameRect (s_menu_f0, &r);
     s.origin.x = (ScreenWidth  - r.extent.width)  >> 1;
     s.origin.y = (ScreenHeight - r.extent.height) >> 1;
-    s.frame = f;
+    s.frame = s_menu_f0;
     DrawStamp (&s);
-    log_add (log_User, "MENU: drew graphics.newgame %dx%d",
-             r.extent.width, r.extent.height);
+
+    /* highlight overlay for the current selection (frame sel+1; its own
+     * hotspot positions it over the right menu line) */
+    s.origin.x = 0;
+    s.origin.y = 0;
+    s.frame = SetAbsFrameIndex (s_menu_f0, (COUNT)(s_menu_sel + 1));
+    DrawStamp (&s);
+}
+
+void cron_menu_frame (int frame_no) {
+    extern uint32_t cron_pad_pressed (int);
+    uint32_t pr;
+    if (!s_menu_ready)
+        return;
+    pr = cron_pad_pressed (0);
+    if (pr & (1u << 0))  /* CRON_BTN_UP   */
+        s_menu_sel = (s_menu_sel + CRON_MENU_OPTS - 1) % CRON_MENU_OPTS;
+    if (pr & (1u << 1))  /* CRON_BTN_DOWN */
+        s_menu_sel = (s_menu_sel + 1) % CRON_MENU_OPTS;
+    /* auto-cycle once a second so the highlight is observable headless (no pad
+     * injection there); harmless on-device alongside real input. */
+    if (frame_no > 0 && (frame_no % 60) == 0)
+        s_menu_sel = (s_menu_sel + 1) % CRON_MENU_OPTS;
+    cron_menu_draw ();
 }
 
 int main (void) {
