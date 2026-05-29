@@ -35,10 +35,7 @@ void ComputerInputContext_new () { /* link-only stub */ }
 void SplashScreen (void (*DoProcessing)(DWORD TimeOut)) {
     if (DoProcessing) DoProcessing (0);
 }
-/* StartGame: still stubbed (restart.c deferred). Returns FALSE so Starcon2Main's
- * while(StartGame()) loop exits cleanly; the menu is driven by the demo loop in
- * main_cron.c, which now reads the REAL PulsedInputState from gameinp.c. */
-int StartGame () { return 0; }
+/* StartGame: now REAL — uqm/restart.c (the main menu state machine). */
 
 /* ---- game clock / init / gameplay subsystems (not compiled yet) ---- */
 void InitGameClock () { /* link-only stub */; }
@@ -103,3 +100,18 @@ void DoConfirmExit () { /* link-only stub */ }
 void TFB_ResetControls () { /* link-only stub */ }
 void NotPositional () { /* link-only stub */ }
 void PlaySoundEffect () { /* link-only stub */ }
+void Victory () { /* link-only stub */ }
+void Credits () { /* link-only stub */ }
+void FreeGameData () { /* link-only stub */ }
+void StopMusic () { /* link-only stub */ }
+void DestroyMusic () { /* link-only stub */ }
+void SeedRandomNumbers () { /* link-only stub */ }
+void Melee () { /* link-only stub */ }
+void Introduction () { /* link-only stub */ }
+void *LoadMusicInstance () { return 0; }  /* no audio yet -> hMusic = 0 (skipped) */
+void PlayMusic () { /* link-only stub */ }
+void SetupMenu () { /* link-only stub */ }
+void DoPopupWindow () { /* link-only stub */ }
+/* FadeMusic returns a TimeCount (callers do SleepThreadUntil(FadeMusic(...)));
+ * return 0 (a past deadline) so the sleep is a no-op. */
+uint32_t FadeMusic () { return 0; }

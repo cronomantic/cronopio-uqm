@@ -45,6 +45,11 @@ static void cron_input_init (void) {
     SetDefaultMenuRepeatDelay ();  /* init the pulse/repeat accel constants */
 }
 
+/* Mirror the 12-button pad into UQM's raw ImmediateInputState each frame. The
+ * derivation to Current/PulsedInputState is done by UQM's own UpdateInputState
+ * (called from inside DoInput's loop) -- we must NOT call it here too, or the
+ * pulse/repeat timing double-steps. Feed BEFORE the scheduler runs so DoInput
+ * sees fresh input this frame. */
 static void cron_input_poll (void) {
     uint32_t p = cron_pad (0);
     volatile int *m = ImmediateInputState.menu;
@@ -58,7 +63,6 @@ static void cron_input_poll (void) {
     m[KEY_MENU_CANCEL]    = (p & (1u << 5)) ? 1 : 0;  /* CRON_BTN_B */
     m[KEY_MENU_PAGE_UP]   = (p & (1u << 8)) ? 1 : 0;  /* CRON_BTN_L */
     m[KEY_MENU_PAGE_DOWN] = (p & (1u << 9)) ? 1 : 0;  /* CRON_BTN_R */
-    UpdateInputState ();
 }
 
 /* Cron backend's scheduler entry — declared in
@@ -90,32 +94,6 @@ extern const char *res_GetResourceType (const char *res);
 static int s_frame_no;
 static int s_did_res_selftest;
 
-/* ---------------------------------------------------------------------- */
-/* Stub workers. Real Starcon2Main lives in sc2/src/uqm/starcon.c and is
- * thousands of lines + many subsystems we haven't compiled yet. For the
- * spike, this stub just proves the scheduler dispatches us. */
-
-static int worker_a (void *arg) {
-    (void)arg;
-    for (int i = 0; i < 5; ++i) {
-        log_add (log_Info, "worker_a tick %d", i);
-        SleepThread (ONE_SECOND / 4);    /* 250 ms cooperative sleep */
-    }
-    log_add (log_Info, "worker_a done");
-    return 0;
-}
-
-static int worker_b (void *arg) {
-    (void)arg;
-    for (int i = 0; i < 8; ++i) {
-        log_add (log_Info, "worker_b tick %d", i);
-        TaskSwitch ();                   /* voluntary yield */
-        SleepThread (ONE_SECOND / 7);    /* ~143 ms */
-    }
-    log_add (log_Info, "worker_b done");
-    return 0;
-}
-
 /* The real Starcon2Main lives in sc2/src/uqm/starcon.c (now in the build).
  * Declare the prototype so we can pass it to StartThread. */
 extern int Starcon2Main (void *threadArg);
@@ -129,31 +107,14 @@ static void frame (void) {
      * which in our model is whoever is executing frame() (the cart's
      * implicit context, which becomes main_coro on the first swap). */
     ProcessThreadLifecycles ();
+
+    /* SLICE-4d: the REAL menu now drives the screen — Starcon2Main runs its
+     * while(StartGame()) loop, StartGame -> RestartMenu -> DoInput, which reads
+     * PulsedInputState. Feed the pad into ImmediateInputState BEFORE the
+     * scheduler so DoInput's own UpdateInputState sees this frame's input. */
+    cron_input_poll ();
     Scheduler_CRON_RunFrame (10);  /* ~10 ms budget per frame */
-
-    /* SLICE-2a: prove the backend renders. Once UQM's own drawing drives the
-     * screen (StartGame TRUE), drop this. */
-    if (!s_did_selftest) { cron_gfx_selftest (); s_did_selftest = 1; }
-
-    /* SLICE-3 derisk: once InitKernel has installed the GFXRES/FONTRES handlers
-     * (a few frames in), load a real font + cel by name to prove they decode. */
-    if (++s_frame_no == 20 && !s_did_res_selftest) {
-        void *fnt = res_GetResource ("comm.commander.font");
-        void *gfx = res_GetResource ("comm.arilou.graphics");
-        log_add (log_User, "RES: font(player.fon)=%s  cel(arilou.ani)=%s",
-                 fnt ? "OK" : "NULL", gfx ? "OK" : "NULL");
-        /* SLICE-4: load the real new-game menu (navigable demo, see below). */
-        extern void cron_menu_init (void);
-        cron_menu_init ();
-        s_did_res_selftest = 1;
-    }
-
-    /* SLICE-4b/c: poll the real input pipeline, then run the navigable menu. */
-    {
-        extern void cron_menu_frame (int frame_no);
-        cron_input_poll ();
-        cron_menu_frame (s_frame_no);
-    }
+    ++s_frame_no;
 
     TFB_FlushGraphics ();          /* drain DCQ -> render onto MAIN canvas */
     cron_vid_present ();           /* downsample the 32bpp MAIN screen -> FB */
@@ -209,80 +170,6 @@ static void mount_content (void) {
     if (contentDir) cron_img_selftest (contentDir);
 }
 
-/* SLICE-4b: a navigable demo of the real new-game menu, drawn through UQM's
- * own drawing API. graphics.newgame (base/ui/newgame.ani) has 6 frames:
- *   frame 0      = full-screen background ("New Game / Load Game / ..."),
- *   frames 1..5  = the highlight overlay for each option (positioned by each
- *                  frame's hotspot).
- * We draw frame 0 + the highlight for the current selection, move the
- * selection with the 12-button pad (UP/DOWN, edge-detected by the host), and
- * auto-cycle it so the highlight is observable headless. This proves multi-
- * frame cel rendering + pad input reaching the cart + selection-driven redraw.
- *
- * This is a DEMO menu (no game action on select yet) -- the faithful menu state
- * machine lives in uqm/restart.c (RestartMenu/DoRestart + the Flash overlay +
- * DoInput + gameinp.c PulsedInputState), whose Melee/Credits/Intro/Setup/save
- * dep tree is the next slice. */
-#define CRON_MENU_OPTS 5
-
-static FRAME s_menu_f0;       /* frame 0 = background; 1..5 = highlights */
-static int   s_menu_sel;
-static int   s_menu_ready;
-
-void cron_menu_init (void) {
-    extern CONTEXT ScreenContext;
-    DRAWABLE d;
-    if (!ScreenContext) { log_add (log_User, "MENU: no ScreenContext"); return; }
-    d = (DRAWABLE)LoadGraphicInstance ("graphics.newgame");
-    s_menu_f0 = CaptureDrawable (d);
-    if (!s_menu_f0) { log_add (log_User, "MENU: load graphics.newgame FAILED"); return; }
-    s_menu_ready = 1;
-    log_add (log_User, "MENU: loaded graphics.newgame (navigable demo)");
-}
-
-static void cron_menu_draw (void) {
-    extern CONTEXT ScreenContext;
-    extern int ScreenWidth, ScreenHeight;
-    RECT r;
-    STAMP s;
-
-    SetContext (ScreenContext);
-    SetContextBackGroundColor (BUILD_COLOR_RGBA (0, 0, 0, 255));
-    ClearDrawable ();
-
-    /* background (centered; it is full 320x240, so this is (0,0)) */
-    GetFrameRect (s_menu_f0, &r);
-    s.origin.x = (ScreenWidth  - r.extent.width)  >> 1;
-    s.origin.y = (ScreenHeight - r.extent.height) >> 1;
-    s.frame = s_menu_f0;
-    DrawStamp (&s);
-
-    /* highlight overlay for the current selection (frame sel+1; its own
-     * hotspot positions it over the right menu line) */
-    s.origin.x = 0;
-    s.origin.y = 0;
-    s.frame = SetAbsFrameIndex (s_menu_f0, (COUNT)(s_menu_sel + 1));
-    DrawStamp (&s);
-}
-
-void cron_menu_frame (int frame_no) {
-    if (!s_menu_ready)
-        return;
-    /* Read the REAL PulsedInputState (driven by cron_input_poll -> the pad ->
-     * UpdateInputState pulse logic). */
-    if (PulsedInputState.menu[KEY_MENU_UP])
-        s_menu_sel = (s_menu_sel + CRON_MENU_OPTS - 1) % CRON_MENU_OPTS;
-    if (PulsedInputState.menu[KEY_MENU_DOWN])
-        s_menu_sel = (s_menu_sel + 1) % CRON_MENU_OPTS;
-    if (PulsedInputState.menu[KEY_MENU_SELECT])
-        log_add (log_User, "MENU: selected option %d", s_menu_sel);
-    /* auto-cycle once a second so the highlight is observable headless (no pad
-     * injection there); harmless on-device alongside real input. */
-    if (frame_no > 0 && (frame_no % 60) == 0)
-        s_menu_sel = (s_menu_sel + 1) % CRON_MENU_OPTS;
-    cron_menu_draw ();
-}
-
 int main (void) {
     const char *msg = "cronopio-uqm spike: starting\n";
     cron_log (msg, 29);
@@ -295,15 +182,15 @@ int main (void) {
      * the main thread deadlocks if it ever calls it. The threadlib.h
      * comment is explicit about this (line 82). StartThread sets sem=NULL
      * and returns immediately. */
-    /* Workers are bring-up scaffolding — they prove the scheduler dispatches
-     * us. Keep them around for now; remove once Starcon2Main reaches its
-     * main loop and we don't need the heartbeat-progress signal. */
-    StartThread (worker_a,     NULL, 64 * 1024, "worker_a");
-    StartThread (worker_b,     NULL, 64 * 1024, "worker_b");
-    /* Starcon2Main needs a big stack: LoadKernel loads + inflates + parses
-     * resources (the colormap, later fonts/graphics) inline, which overflowed
-     * a 64KB coro stack (LoadColorMap silently returned NULL → fatal). */
-    StartThread (Starcon2Main, NULL, 512 * 1024, "Starcon2Main");
+    /* The worker_a/worker_b heartbeat threads were bring-up scaffolding (proved
+     * the scheduler dispatches cooperatively); removed now that Starcon2Main
+     * reaches its real main loop + menu. */
+    /* Starcon2Main needs a big stack: LoadKernel + now the menu (restart.c ->
+     * DrawRestartMenuGraphic -> Flash overlay -> font_DrawText) are deep call
+     * chains run inline on this coro. 512KB overflowed (corrupted the heap ->
+     * garbage coro pointers -> bad CORO_SWAP) right after the menu rendered;
+     * 1MB (= CRON_THREAD_STACK_MAX) gives headroom. */
+    StartThread (Starcon2Main, NULL, 1024 * 1024, "Starcon2Main");
 
     cron_input_init ();    /* set up the real input pipeline (gameinp.c) */
     cron_set_frame (frame);

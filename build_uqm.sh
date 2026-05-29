@@ -71,10 +71,13 @@ UQM_SRCS=(
   "$US/uqm/master.c"
   "$US/uqm/setup.c"
   # GFX slice 4c: the real UQM input pipeline (pad -> ImmediateInputState ->
-  # UpdateInputState -> PulsedInputState). restart.c (the full menu state
-  # machine) is deferred — its Flash/fade/music/melee/credits/intro/setup dep
-  # tree is large and not headless-navigable (no pad injection).
+  # UpdateInputState -> PulsedInputState).
   "$US/uqm/gameinp.c"
+  # GFX slice 4d: the real main-menu state machine (restart.c) + the flash
+  # overlay (the pulsing highlight). Leaf activities reached only on a menu
+  # selection (Melee/Credits/Introduction/SetupMenu/save-load) stay stubbed.
+  "$US/uqm/restart.c"
+  "$US/uqm/flash.c"
 )
 
 # libs/uio — the faithful UQM virtual filesystem (reads the .uqm content

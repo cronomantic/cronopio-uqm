@@ -18,6 +18,7 @@
 
 #include "port.h"
 #include "libs/graphics/sdl/sdl_common.h"
+#include "libs/log.h"
 
 #include <stdint.h>
 #include <stdlib.h>

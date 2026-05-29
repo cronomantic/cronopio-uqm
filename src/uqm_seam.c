@@ -147,3 +147,18 @@ const char **optAddons;
 void *PlayerInput[2];
 SOUND MenuSounds;
 volatile int GameActive;
+
+/* Game-data tables referenced by StartGame's tail (restart.c:399 —
+ * star_array=starmap_array; Elements=element_array; PlanData=planet_array).
+ * That code only runs when a game actually STARTS; the menu (SETUP/QUIT/idle)
+ * exits before it, so [1] stubs that link but are never dereferenced on the
+ * menu path are sufficient. Real tables live in big generated data TUs
+ * (starmap/elemdata/plandata) — bring them in when gameplay lands. */
+#include "uqm/planets/plandata.h"   /* PlanetFrame */
+STAR_DESC starmap_array[1];
+STAR_DESC *star_array;
+const BYTE element_array[1];
+const BYTE *Elements;
+const PlanetFrame planet_array[1];
+const PlanetFrame *PlanData;
+volatile int MouseButtonDown;
