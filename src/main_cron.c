@@ -109,6 +109,12 @@ static void frame (void) {
         void *gfx = res_GetResource ("comm.arilou.graphics");
         log_add (log_User, "RES: font(player.fon)=%s  cel(arilou.ani)=%s",
                  fnt ? "OK" : "NULL", gfx ? "OK" : "NULL");
+        /* SLICE-4a: draw a REAL UQM screen (the new-game menu background) onto
+         * the screen context via the real Context -> DrawStamp -> DCQ path, to
+         * prove UQM's own drawing (not just direct-canvas self-tests) reaches
+         * the framebuffer. */
+        extern void cron_draw_menu_test (void);
+        cron_draw_menu_test ();
         s_did_res_selftest = 1;
     }
 
@@ -164,6 +170,37 @@ static void mount_content (void) {
      * content before wiring the cel/font resource loaders. */
     extern void cron_img_selftest (uio_DirHandle *dir);
     if (contentDir) cron_img_selftest (contentDir);
+}
+
+/* SLICE-4a: draw the real new-game menu background through UQM's own drawing
+ * API (SetContext + LoadGraphic + DrawStamp), which enqueues onto the DCQ that
+ * frame() drains onto the MAIN canvas. Proves the full draw path with real
+ * content; bypasses restart.c (whose menu state machine + huge dep tree is a
+ * later slice). */
+void cron_draw_menu_test (void) {
+    extern CONTEXT ScreenContext;
+    extern int ScreenWidth, ScreenHeight;
+    DRAWABLE d;
+    FRAME f;
+    RECT r;
+    STAMP s;
+
+    if (!ScreenContext) { log_add (log_User, "MENU: no ScreenContext"); return; }
+
+    d = (DRAWABLE)LoadGraphicInstance ("graphics.newgame");
+    f = CaptureDrawable (d);
+    if (!f) { log_add (log_User, "MENU: load graphics.newgame FAILED"); return; }
+
+    GetFrameRect (f, &r);
+    SetContext (ScreenContext);
+    SetContextBackGroundColor (BUILD_COLOR_RGBA (0, 0, 0, 255));
+    ClearDrawable ();
+    s.origin.x = (ScreenWidth  - r.extent.width)  >> 1;
+    s.origin.y = (ScreenHeight - r.extent.height) >> 1;
+    s.frame = f;
+    DrawStamp (&s);
+    log_add (log_User, "MENU: drew graphics.newgame %dx%d",
+             r.extent.width, r.extent.height);
 }
 
 int main (void) {
