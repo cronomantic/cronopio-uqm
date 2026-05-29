@@ -102,6 +102,20 @@ UIO_SRCS=(
   # "$US/libs/file/temp.c"
 )
 
+# libs/resource — the resource system: parses the .rmp resource index
+# (PropFile) into a name->{type,path} map over uio, and loads resources by
+# name. The graphic/audio/video TYPE handlers it installs are link symbols
+# (stubbed) until those subsystems land — registering them does not call them.
+RES_SRCS=(
+  "$US/libs/resource/direct.c"
+  "$US/libs/resource/filecntl.c"
+  "$US/libs/resource/getres.c"
+  "$US/libs/resource/loadres.c"
+  "$US/libs/resource/propfile.c"
+  "$US/libs/resource/resinit.c"
+  "$US/libs/resource/stringbank.c"
+)
+
 # Our seam + cart entry + the libc + vendored miniz (zlib for uio's zip fs).
 PORT=(
   "$ROOT/src/uqm_seam.c"
@@ -126,6 +140,7 @@ echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
   "${INCS[@]}" \
   "${UQM_SRCS[@]}" \
   "${UIO_SRCS[@]}" \
+  "${RES_SRCS[@]}" \
   "${PORT[@]}" \
   --rom="$ROOT/content/uqm-0.8.0-content.uqm" \
   --heap-reserve=2M \

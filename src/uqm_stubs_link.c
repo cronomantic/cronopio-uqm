@@ -92,3 +92,10 @@ void UninitPlanetInfo () { /* link-only stub */ }
 void ReleaseStringTable () { /* link-only stub */ }
 void DestroyStringTable () { /* link-only stub */ }
 void GetStarShipFromIndex () { /* link-only stub */ }
+void AllocStringTable () { /* link-only stub */ }
+void FreeStringTable () { /* link-only stub */ }
+void InstallGraphicResTypes () { /* link-only stub */ }
+void InstallStringTableResType () { /* link-only stub */ }
+void InstallAudioResTypes () { /* link-only stub */ }
+void InstallVideoResType () { /* link-only stub */ }
+void InstallCodeResType () { /* link-only stub */ }

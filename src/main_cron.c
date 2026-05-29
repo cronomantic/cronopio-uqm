@@ -24,6 +24,7 @@
 #include "libs/timelib.h"
 #include "libs/uio.h"
 #include "libs/uio/fstypes.h"
+#include "libs/reslib.h"
 
 /* Cron backend's scheduler entry — declared in
  * sc2/src/libs/threads/cron/cronthreads.h, mirrored here to avoid pulling
@@ -117,6 +118,27 @@ static void uqm_content_test (void) {
             (int)n, buf);
     cron_log (m, ml);
     uio_close (h);
+
+    /* Resource-layer validation: parse the .rmp resource index (963 entries)
+     * via libs/resource over uio, then look a resource up by name. This is
+     * the next layer above raw uio — InitResourceSystem registers the type
+     * vtables (graphic/audio/video handlers are stubbed; not invoked here),
+     * LoadResourceIndex parses uqm.rmp into a name->{type,path} map. */
+    extern uio_DirHandle *contentDir;       /* the seam's options.h global */
+    contentDir = content;
+    InitResourceSystem ();
+    LoadResourceIndex (contentDir, "uqm.rmp", (const char *)0);
+    /* A real registered resource resolves (non-NULL); a bogus name does not.
+     * type is UNKNOWNRES (not BINTAB) until libs/strings InstallStringTable-
+     * ResType lands — registering BINTAB/STRTAB is the next layer; here we
+     * only prove the 963-entry index parsed and resources are queryable. */
+    const char *t   = res_GetResourceType ("colortable.hangar");
+    const char *bog = res_GetResourceType ("no.such.resource");
+    char r[112];
+    int rl = snprintf (r, sizeof r,
+            "RES: index parsed; colortable.hangar=\"%s\" bogus=%s\n",
+            t ? t : "(null)", bog ? bog : "(null,ok)");
+    cron_log (r, rl);
 }
 
 int main (void) {
