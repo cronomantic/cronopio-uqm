@@ -26,7 +26,40 @@
 #include "libs/uio/fstypes.h"
 #include "libs/reslib.h"
 #include "libs/gfxlib.h"
+#include "uqm/controls.h"     /* KEY_MENU_*, CONTROLLER_INPUT_STATE, Pulsed/ImmediateInputState */
 #include "vid_cron.h"
+
+/* ---- input seam: 12-button pad -> UQM's real input pipeline (gameinp.c) ----
+ * Each frame we mirror the pad into ImmediateInputState.menu[] and call the
+ * real UpdateInputState(), which derives Current/PulsedInputState with UQM's
+ * pulse/key-repeat logic. The menu then reads the REAL PulsedInputState. */
+extern volatile CONTROLLER_INPUT_STATE ImmediateInputState;
+extern CONTROLLER_INPUT_STATE PulsedInputState;
+extern void UpdateInputState (void);
+extern void SetDefaultMenuRepeatDelay (void);
+extern volatile int GameActive;
+extern uint32_t cron_pad (int player);
+
+static void cron_input_init (void) {
+    GameActive = 1;               /* else UpdateInputState calls SleepGame */
+    SetDefaultMenuRepeatDelay ();  /* init the pulse/repeat accel constants */
+}
+
+static void cron_input_poll (void) {
+    uint32_t p = cron_pad (0);
+    volatile int *m = ImmediateInputState.menu;
+    /* d-pad -> menu directions */
+    m[KEY_MENU_UP]        = (p & (1u << 0)) ? 1 : 0;  /* CRON_BTN_UP    */
+    m[KEY_MENU_DOWN]      = (p & (1u << 1)) ? 1 : 0;  /* CRON_BTN_DOWN  */
+    m[KEY_MENU_LEFT]      = (p & (1u << 2)) ? 1 : 0;  /* CRON_BTN_LEFT  */
+    m[KEY_MENU_RIGHT]     = (p & (1u << 3)) ? 1 : 0;  /* CRON_BTN_RIGHT */
+    /* A or START -> select; B -> cancel; L/R -> page up/down */
+    m[KEY_MENU_SELECT]    = (p & ((1u << 4) | (1u << 10))) ? 1 : 0; /* A / START */
+    m[KEY_MENU_CANCEL]    = (p & (1u << 5)) ? 1 : 0;  /* CRON_BTN_B */
+    m[KEY_MENU_PAGE_UP]   = (p & (1u << 8)) ? 1 : 0;  /* CRON_BTN_L */
+    m[KEY_MENU_PAGE_DOWN] = (p & (1u << 9)) ? 1 : 0;  /* CRON_BTN_R */
+    UpdateInputState ();
+}
 
 /* Cron backend's scheduler entry — declared in
  * sc2/src/libs/threads/cron/cronthreads.h, mirrored here to avoid pulling
@@ -115,9 +148,10 @@ static void frame (void) {
         s_did_res_selftest = 1;
     }
 
-    /* SLICE-4b: run the navigable menu demo every frame once loaded. */
+    /* SLICE-4b/c: poll the real input pipeline, then run the navigable menu. */
     {
         extern void cron_menu_frame (int frame_no);
+        cron_input_poll ();
         cron_menu_frame (s_frame_no);
     }
 
@@ -232,15 +266,16 @@ static void cron_menu_draw (void) {
 }
 
 void cron_menu_frame (int frame_no) {
-    extern uint32_t cron_pad_pressed (int);
-    uint32_t pr;
     if (!s_menu_ready)
         return;
-    pr = cron_pad_pressed (0);
-    if (pr & (1u << 0))  /* CRON_BTN_UP   */
+    /* Read the REAL PulsedInputState (driven by cron_input_poll -> the pad ->
+     * UpdateInputState pulse logic). */
+    if (PulsedInputState.menu[KEY_MENU_UP])
         s_menu_sel = (s_menu_sel + CRON_MENU_OPTS - 1) % CRON_MENU_OPTS;
-    if (pr & (1u << 1))  /* CRON_BTN_DOWN */
+    if (PulsedInputState.menu[KEY_MENU_DOWN])
         s_menu_sel = (s_menu_sel + 1) % CRON_MENU_OPTS;
+    if (PulsedInputState.menu[KEY_MENU_SELECT])
+        log_add (log_User, "MENU: selected option %d", s_menu_sel);
     /* auto-cycle once a second so the highlight is observable headless (no pad
      * injection there); harmless on-device alongside real input. */
     if (frame_no > 0 && (frame_no % 60) == 0)
@@ -270,6 +305,7 @@ int main (void) {
      * a 64KB coro stack (LoadColorMap silently returned NULL → fatal). */
     StartThread (Starcon2Main, NULL, 512 * 1024, "Starcon2Main");
 
+    cron_input_init ();    /* set up the real input pipeline (gameinp.c) */
     cron_set_frame (frame);
     return 0;
 }

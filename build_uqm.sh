@@ -70,6 +70,11 @@ UQM_SRCS=(
   "$US/uqm/displist.c"
   "$US/uqm/master.c"
   "$US/uqm/setup.c"
+  # GFX slice 4c: the real UQM input pipeline (pad -> ImmediateInputState ->
+  # UpdateInputState -> PulsedInputState). restart.c (the full menu state
+  # machine) is deferred — its Flash/fade/music/melee/credits/intro/setup dep
+  # tree is large and not headless-navigable (no pad injection).
+  "$US/uqm/gameinp.c"
 )
 
 # libs/uio — the faithful UQM virtual filesystem (reads the .uqm content

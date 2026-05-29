@@ -76,8 +76,9 @@ void log_showBox (int wait, int doFatal) {
 #include "uqm/starmap.h"     /* STAR_DESC */
 #include "uqm/element.h"     /* PRIMITIVE, MAX_DISPLAY_PRIMS */
 
-/* GlobData + RadarContext now defined by uqm/globdata.c (in KEEP). */
-volatile BOOLEAN GamePaused;
+/* GlobData + RadarContext now defined by uqm/globdata.c (in KEEP).
+ * GamePaused / CurrentInputState / PulsedInputState / ImmediateInputState now
+ * defined by uqm/gameinp.c (in KEEP). */
 
 /* options.h globals — these would be populated by parseOptions() in a
  * real main(); the cart hand-fixes them once content paths are known. */
@@ -86,11 +87,6 @@ struct uio_DirHandle *contentDir;   /* uio_* are uqm filelib types */
 struct uio_DirHandle *configDir;
 struct uio_DirHandle *saveDir;
 struct uio_DirHandle *meleeDir;
-
-#include "uqm/controls.h"
-CONTROLLER_INPUT_STATE          CurrentInputState;
-CONTROLLER_INPUT_STATE          PulsedInputState;
-volatile CONTROLLER_INPUT_STATE ImmediateInputState;
 
 /* ---------------------------------------------------------------------- */
 /* timelib — UQM measures time in ONE_SECOND=840 ticks/sec units.
@@ -150,3 +146,4 @@ const char **optAddons;
  * which isn't reached at runtime (StartGame→0). Storage only. */
 void *PlayerInput[2];
 SOUND MenuSounds;
+volatile int GameActive;

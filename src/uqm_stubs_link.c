@@ -23,9 +23,7 @@ void InitSound () { /* link-only stub */ }
 void InitVideoPlayer () { /* link-only stub */ }
 void LoadSoundInstance () { /* link-only stub */ }
 
-/* ---- input (not compiled yet — input seam is the next slice) ---- */
-void FlushInput () { /* link-only stub */; }
-void UpdateInputState () { /* link-only stub */; }
+/* ---- input — FlushInput/UpdateInputState now REAL (uqm/gameinp.c). ---- */
 void HumanInputContext_new () { /* link-only stub */ }
 void ComputerInputContext_new () { /* link-only stub */ }
 
@@ -37,9 +35,9 @@ void ComputerInputContext_new () { /* link-only stub */ }
 void SplashScreen (void (*DoProcessing)(DWORD TimeOut)) {
     if (DoProcessing) DoProcessing (0);
 }
-/* StartGame: returns BOOLEAN (start a new game?). No menu/UI yet, so return
- * FALSE — Starcon2Main's `while (StartGame())` loop exits cleanly instead of
- * spinning forever on a garbage return value. */
+/* StartGame: still stubbed (restart.c deferred). Returns FALSE so Starcon2Main's
+ * while(StartGame()) loop exits cleanly; the menu is driven by the demo loop in
+ * main_cron.c, which now reads the REAL PulsedInputState from gameinp.c. */
 int StartGame () { return 0; }
 
 /* ---- game clock / init / gameplay subsystems (not compiled yet) ---- */
@@ -98,3 +96,10 @@ void TFB_UploadTransitionScreen () { /* link-only stub */ }
 
 /* sdluio_loadImage is now REAL — src/img_cron.c (PNG decode via stb_image,
  * reading through uio). */
+void SleepGame () { /* link-only stub */ }
+void PauseGame () { /* link-only stub */ }
+void BeginInputFrame () { /* link-only stub */ }
+void DoConfirmExit () { /* link-only stub */ }
+void TFB_ResetControls () { /* link-only stub */ }
+void NotPositional () { /* link-only stub */ }
+void PlaySoundEffect () { /* link-only stub */ }
