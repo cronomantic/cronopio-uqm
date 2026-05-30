@@ -50,8 +50,8 @@ ninja -C "$CRBUILD" cronopio-cc cronopio cronopio-headless || {
 # CANONICAL malloc — its O(1) free beats picolibc nano-malloc's O(n) free on the
 # 10559-entry ZIP content mount (~1s vs ~9s). So build picolibc WITHOUT malloc
 # (cron_sys.c supplies it). DOOM/Quake keep picolibc's malloc (no --no-malloc).
-echo "[build] building picolibc.bc (C library, --no-malloc; tuned malloc in cron_sys.c)..."
-bash "$RT/build_picolibc.sh" --no-malloc || {
+echo "[build] building picolibc.bc (C library, --no-malloc --with-stdio; tuned malloc in cron_sys.c)..."
+bash "$RT/build_picolibc.sh" --no-malloc --with-stdio || {
   echo "[build] ERROR: build_picolibc.sh failed." >&2; exit 1; }
 
 OUT="${1:-$ROOT/uqm.crom}"
