@@ -63,6 +63,27 @@ static void cron_input_poll (void) {
     m[KEY_MENU_CANCEL]    = (p & (1u << 5)) ? 1 : 0;  /* CRON_BTN_B */
     m[KEY_MENU_PAGE_UP]   = (p & (1u << 8)) ? 1 : 0;  /* CRON_BTN_L */
     m[KEY_MENU_PAGE_DOWN] = (p & (1u << 9)) ? 1 : 0;  /* CRON_BTN_R */
+
+    /* GAMEPLAY (flight/battle) controls. Menu nav reads menu[] above, but the
+     * interplanetary SIS flight + battle read CurrentInputState.key[<player
+     * template>][KEY_*] (e.g. solarsys.c: key[..][KEY_UP]=thrust, KEY_LEFT/RIGHT
+     * =turn). UpdateInputState copies ImmediateInputState wholesale into
+     * CurrentInputState, so filling key[] here drives the ship. PlayerControls[]
+     * picks the template per player (default 0); fill ALL NUM_TEMPLATES so any
+     * binding works. d-pad = thrust/turn, A=weapon, B=special. */
+    {
+        int up = (p & (1u << 0)) ? 1 : 0, down = (p & (1u << 1)) ? 1 : 0;
+        int left = (p & (1u << 2)) ? 1 : 0, right = (p & (1u << 3)) ? 1 : 0;
+        int wpn = (p & (1u << 4)) ? 1 : 0, spc = (p & (1u << 5)) ? 1 : 0;
+        for (int t = 0; t < NUM_TEMPLATES; ++t) {
+            ImmediateInputState.key[t][KEY_UP]      = up;     /* thrust */
+            ImmediateInputState.key[t][KEY_DOWN]    = down;
+            ImmediateInputState.key[t][KEY_LEFT]    = left;   /* turn left */
+            ImmediateInputState.key[t][KEY_RIGHT]   = right;  /* turn right */
+            ImmediateInputState.key[t][KEY_WEAPON]  = wpn;    /* A */
+            ImmediateInputState.key[t][KEY_SPECIAL] = spc;    /* B */
+        }
+    }
 }
 
 /* Cron backend's scheduler entry — declared in
