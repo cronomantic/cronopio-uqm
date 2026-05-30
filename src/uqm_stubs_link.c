@@ -101,7 +101,6 @@ void Alarm_remove () { }
  * keep them graceful (they may sit on the view-init path). */
 void InitSpace () { }
 void UninitSpace () { }
-void InitStatusOffsets () { }
 /* LoadLanderData is called by InitSolarSys (solarsys.c) ON the view-init path,
  * not just on landing — no-op (no lander data) is graceful; void, no garbage. */
 /* On the New-Game / IP-flight path, reached + graceful (void, no garbage). The
@@ -126,10 +125,8 @@ STUB_TRAP (ship_weapons)
 STUB_TRAP (PlotIntercept)
 STUB_TRAP (computer_intelligence)
 STUB_TRAP (selectShipComputer)
-STUB_TRAP (battleEndReadyComputer)
 STUB_TRAP (frameInputHuman)
 STUB_TRAP (selectShipHuman)
-STUB_TRAP (battleEndReadyHuman)
 STUB_TRAP (initialize_laser)
 STUB_TRAP (initialize_missile)
 STUB_TRAP (weapon_collision)
@@ -137,14 +134,6 @@ STUB_TRAP (ModifySilhouette)
 STUB_TRAP (TrackShip)
 STUB_TRAP (CalculateGravity)
 STUB_TRAP (TimeSpaceMatterConflict)
-STUB_TRAP (DeltaCrew)
-STUB_TRAP (DeltaEnergy)
-STUB_TRAP (StartShipExplosion)
-STUB_TRAP (FindAliveStarShip)
-STUB_TRAP (GetWinnerStarShip)
-STUB_TRAP (SetWinnerStarShip)
-STUB_TRAP (RecordShipDeath)
-STUB_TRAP (StopAllBattleMusic)
 STUB_TRAP (AbandonShip)
 STUB_TRAP (Battle)
 STUB_TRAP (collide)
@@ -205,13 +194,12 @@ int PlayingTrack () { return 0; }
  *      in hyperspace (ship.c's per-frame handler) — they'll name themselves then;
  *      that's the next increment (the combat-status/trail engine). ---- */
 void BattleSong () { }              /* audio no-op */
-STUB_TRAP (DrawCaptainsWindow)
 STUB_TRAP (GetEncounterStarShip)
 STUB_TRAP (GetInitialMeleeStarShips)
-STUB_TRAP (OpponentAlive)
-STUB_TRAP (InitShipStatus)
-STUB_TRAP (PreProcessStatus)
-STUB_TRAP (PostProcessStatus)
-STUB_TRAP (ship_death)
-STUB_TRAP (ship_transition)
-STUB_TRAP (spawn_ion_trail)
+
+/* ---- status/tactrans/shipstat boundary: battle-element/encounter/melee leaves,
+ *      reached only in actual combat (NOT hyperspace flight). ---- */
+STUB_TRAP (crew_preprocess)
+STUB_TRAP (MeleeShipDeath)
+STUB_TRAP (FleetIsInfinite)
+STUB_TRAP (UpdateShipFragCrew)

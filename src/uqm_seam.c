@@ -156,6 +156,8 @@ const char **optAddons;
  * which also owns Human/ComputerInputContext_new. */
 SOUND MenuSounds;
 SOUND GameSounds;          /* battle sound table (sounds.c) — audio not built */
+BYTE battle_counter[2];    /* NUM_SIDES; battle frame counter — battle only */
+FRAME explosion[16];       /* ship-explosion animation frames — battle only (zeroed) */
 volatile int GameActive;
 
 /* Game-data tables referenced by StartGame's tail (restart.c:399 —

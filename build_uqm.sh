@@ -265,6 +265,13 @@ SURF_SRCS=(
                                    # table + InitLander/PlanetSide/object_animation
                                    # + the lander-music/data loaders. Nearly self-
                                    # contained (deps already in the build).
+  "$US/uqm/status.c"               # combat status HUD (crew/energy) + Pre/PostProcess
+                                   # Status (the per-frame ship status the hyperspace
+                                   # flagship's ship_preprocess calls) + DeltaCrew/Energy.
+  "$US/uqm/tactrans.c"             # tactical transitions: spawn_ion_trail + ship_
+                                   # transition (the hyperspace flagship's trail + warp
+                                   # animation) + the battle-outcome fns.
+  "$US/uqm/shipstat.c"             # InitShipStatus / UpdateShipFragCrew (ship status box).
   "$US/uqm/hyper.c"                # HYPERSPACE navigation: leave Sol + fly the
                                    # galaxy. Provides MoveSIS (real flagship move!),
                                    # SeedUniverse (the galaxy's alien fleets),
