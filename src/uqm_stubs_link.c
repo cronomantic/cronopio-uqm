@@ -62,7 +62,6 @@ void InstallVideoResType () { }
 void ProcessSound () { }
 void PlaySound () { }
 void CalcSoundPosition () { }
-void SetPlanetMusic () { }
 void NotPositional () { }
 void FlushSounds () { }
 void RemoveSoundsForObject () { }
@@ -103,7 +102,6 @@ void PauseGame () { }
 void SleepGame () { }
 /* Battle/hyper DATA teardown — nothing was allocated (those subsystems are
  * stubbed), so freeing is a no-op. Void, no garbage. */
-void FreeLanderData () { }
 void FreeHyperData () { }
 /* init.c space setup — InitSISContexts/the view ran fine with these no-op'd;
  * keep them graceful (they may sit on the view-init path). */
@@ -112,7 +110,6 @@ void UninitSpace () { }
 void InitStatusOffsets () { }
 /* LoadLanderData is called by InitSolarSys (solarsys.c) ON the view-init path,
  * not just on landing — no-op (no lander data) is graceful; void, no garbage. */
-void LoadLanderData () { }
 /* On the New-Game / IP-flight path, reached + graceful (void, no garbage). The
  * intro story, universe seeding (state already set by InitGameStructures) and
  * the per-tick hyperspace-encounter check no-op until those subsystems land. */
@@ -168,8 +165,6 @@ STUB_TRAP (free_image)       /* free_ship(FreeBattleData=TRUE) only */
 /* ---- planet-SURFACE engine + scan/lander/report: reached only when the
  *      player ORBITS or SCANS a world (deeper than the system view). ---- */
 STUB_TRAP (DoDiscoveryReport)
-STUB_TRAP (KillLanderCrewSeq)
-STUB_TRAP (SetLanderTakeoff)
 
 /* ---- sub-menus / star map / communication / leaf activities: reached only
  *      by a specific player action we have not enabled yet. ---- */
@@ -199,6 +194,3 @@ void PlayMenuSound () { }            /* audio no-op (sounds.c) */
 int WaitForAnyButtonUntil () { return 0; }
 /* lander.c — the LANDING minigame (deeper than orbit/scan); not reached by the
  * scan path, so STUB_TRAP (loud if a descent is ever triggered). */
-STUB_TRAP (InitLander)
-STUB_TRAP (PlanetSide)
-STUB_TRAP (object_animation)

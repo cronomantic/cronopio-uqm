@@ -145,7 +145,6 @@ int optWhichCoarseScan;   /* planet-surface scan style (settings.c) */
 int optWhichShield;       /* planet shield-throb style (settings.c) */
 BOOLEAN optStereoSFX;
 FRAME stars_in_space;
-MUSIC_REF LanderMusic;
 POINT SpaceOrg;
 volatile int QuitPosted;
 BOOLEAN opt3doMusic;
@@ -167,14 +166,8 @@ volatile int GameActive;
  * Elements/PlanData are assigned by restart.c and owned here. */
 #include "uqm/planets/plandata.h"   /* PlanetFrame */
 /* Elements / PlanData (the pointers restart.c assigns) are now defined by
- * uqm/planets/surface.c (in KEEP) — the planet-surface engine owns them. */
-/* CreatureData: the life-form attribute table, really defined in lander.c (the
- * landing minigame, NOT compiled — deeper than orbit/scan). The scan only needs
- * the life-node COUNT (GenerateLifeForms), not the per-creature attributes, so a
- * zeroed table of the real size (27 entries + headroom) is safe here: surface.c
- * indexes it without OOB. When lander.c lands, this comes out. */
-#include "uqm/planets/lifeform.h"   /* LIFEFORM_DESC, NUM_CREATURE_TYPES */
-const LIFEFORM_DESC CreatureData[NUM_CREATURE_TYPES + 5];
+ * uqm/planets/surface.c (in KEEP) — the planet-surface engine owns them.
+ * CreatureData (the life-form table) is now REAL too — uqm/planets/lander.c. */
 volatile int MouseButtonDown;
 /* pSolarSysState + ExploreSolarSys are now REAL — planets/solarsys.c (slice 5b:
  * the interplanetary solar-system view). The slice-5a behavioural stub that set

@@ -254,6 +254,12 @@ SURF_SRCS=(
   "$US/uqm/planets/surface.c"
   "$US/uqm/planets/scan.c"
   "$US/uqm/cons_res.c"
+  "$US/uqm/planets/lander.c"       # the LANDER minigame: descend to a planet
+                                   # surface, drive the lander, collect minerals/
+                                   # life/energy. Defines the real CreatureData
+                                   # table + InitLander/PlanetSide/object_animation
+                                   # + the lander-music/data loaders. Nearly self-
+                                   # contained (deps already in the build).
 )
 
 # libs/uio — the faithful UQM virtual filesystem (reads the .uqm content
