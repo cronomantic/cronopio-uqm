@@ -182,6 +182,14 @@ IP_SRCS=(
                                    # a clean leaf (no deps). Mis-stubbing ARCTAN +
                                    # the empty sinetab gave garbage planet frames →
                                    # DrawStamp drew a garbage-sized stamp = hang.
+  "$US/libs/math/sqrt.c"           # square_root — general math leaf (9 callers); a
+                                   # garbage-returning stub is an ARCTAN-class landmine.
+  "$US/libs/math/random.c"         # TFB_Random/TFB_SeedRandom — the general RNG (16
+                                   # callers: ships, star background, planet seeds);
+                                   # garbage RNG = another ARCTAN-class landmine.
+  "$US/uqm/velocity.c"             # velocity-vector math — the flagship's INTERPLANETARY
+                                   # inertial movement uses it too (not battle-only);
+                                   # a clean leaf (needs only ARCTAN+sinetab from trans.c).
   "$US/libs/math/random2.c"
   "$US/libs/graphics/intersec.c"
   "$US/libs/graphics/boxint.c"     # BoxIntersect/BoxUnion (clean geometry leaf)

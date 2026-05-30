@@ -1,254 +1,209 @@
 /*
  * uqm_stubs_link.c — link-surface stubs for UQM subsystems not yet compiled.
- * Each function is a no-op (or a minimal behavioural seam); as the real owning
- * .c files land in build_uqm.sh's KEEP lists, the corresponding stubs come out.
  *
- * GFX slice 2 (this round): the TFB drawing layer is now REAL — the
- * platform-independent front-end (tfb_draw.c / tfb_prim.c / dcqueue.c / bbox.c)
- * + the stock SDL backend (sdl/canvas.c / primitives.c / rotozoom.c / palette.c)
- * compile against the SDL_Surface shim (compat/SDL.h + src/sdl_compat.c). So all
- * the TFB_DrawScreen_* / TFB_DrawImage_* / TFB_DrawCanvas_* / TFB_Prim_* /
- * TFB_Batch* / Native-palette stubs are GONE (now real). What remains stubbed:
- * the cel/font/graphic-resource loaders (gfxload/font/resgfx/loaddisp/intersec),
- * audio, input, and the game-init / gameplay subsystems.
+ * Two kinds of stub, kept STRICTLY apart after the ARCTAN incident (a math
+ * leaf mis-stubbed as "battle-only" returned garbage → a garbage planet
+ * image.frame → DrawStamp drew a garbage-sized stamp = a silent 1.5-hour
+ * infinite-loop hang):
+ *
+ *   1. DELIBERATE no-ops / return-0 — functions that ARE reached on the live
+ *      path and degrade gracefully (audio with no backend, a stationary
+ *      flagship, a behavioural seam). These do nothing (or return the one
+ *      correct sentinel, e.g. NULL/0) and must NOT corrupt state.
+ *
+ *   2. STUB_TRAP — functions that should NEVER be reached on the current paths
+ *      (boot, the menu, New Game → the interplanetary view). These belong to
+ *      subsystems not yet brought up (battle/melee, planet-surface scan/orbit,
+ *      the sub-menus / star map / communication). If one is ever called it is
+ *      a MIS-CLASSIFICATION (the next ARCTAN): it LOGS ITS OWN NAME and traps
+ *      immediately, so the bug is an instant, named halt — never silent
+ *      garbage. When a subsystem lands, its STUB_TRAPs are deleted as the real
+ *      TUs join build_uqm.sh's KEEP list.
+ *
+ * RULE learned: a value-returning function must NEVER be a silent stub. Either
+ * compile its real owner (general math/util leaves — ARCTAN/trans.c,
+ * square_root/sqrt.c, TFB_Random/random.c — are compiled, NOT stubbed) or
+ * STUB_TRAP it. Before stubbing anything, grep its callers across ALL
+ * subsystems; shared leaves are used everywhere.
  */
 #include <stdint.h>
 #include "port.h"
 #include "libs/compiler.h"
+#include "libs/log.h"
 
-/* ---- audio / video player (not compiled) ---- */
-void initAudio () { /* link-only stub */; }
-void StopSound () { /* link-only stub */; }
-void InitSound () { /* link-only stub */ }
-void InitVideoPlayer () { /* link-only stub */ }
-/* LoadSound = LoadSoundInstance (nameref.h); the result feeds CaptureSound
- * (= CaptureStringTable) -> MenuSounds. Audio isn't implemented, so return 0
- * (NULL): CaptureStringTable(0) -> NULL -> MenuSounds == 0, so DoInput's
- * menu-sound block is skipped. A void stub returned a GARBAGE non-NULL handle
- * -> MenuSounds invalid -> SetAbsSoundIndex(MenuSounds) (= SetAbsStringTableIndex)
- * OOB-trapped on every menu SELECT. */
-void *LoadSoundInstance () { return 0; }
-
-/* ---- input — FlushInput/UpdateInputState now REAL (uqm/gameinp.c);
- *      Human/ComputerInputContext_new + PlayerInput[] now REAL
- *      (uqm/battlecontrols.c). ---- */
-/* battlecontrols.c's Human/ComputerInputHandlers tables initialise their
- * frameInput/selectShip/battleEndReady members with these battle/AI handlers.
- * The translator needs definitions to resolve the function-pointer
- * initialisers, but they're only CALLED during battle (slice 5b). */
-void computer_intelligence () { /* link-only stub */ }
-void selectShipComputer () { /* link-only stub */ }
-void battleEndReadyComputer () { /* link-only stub */ }
-void frameInputHuman () { /* link-only stub */ }
-void selectShipHuman () { /* link-only stub */ }
-void battleEndReadyHuman () { /* link-only stub */ }
-
-/* SplashScreen(cb): the real one shows splash gfx then invokes the callback
- * (BackgroundInitKernel), which runs LoadMasterShipList + InitGameKernel. We
- * don't draw the splash yet, but we MUST invoke the callback or the master
- * ship list never initialises and LockMasterShip asserts on an empty
- * master_q. Behavioural seam stub, not a no-op. */
-void SplashScreen (void (*DoProcessing)(DWORD TimeOut)) {
-    if (DoProcessing) DoProcessing (0);
+/* A STUB_TRAP logs its name then halts (llvm.trap → VM HALT). The headless
+ * runner prints the trap; the log line right before it names the culprit. */
+static void cron_stub_unreached (const char *name) {
+    log_add (log_Fatal, "CRON: UNREACHED STUB CALLED (mis-classified — compile "
+            "its owner or reclassify): %s", name);
+    __builtin_trap ();
 }
-/* StartGame: now REAL — uqm/restart.c (the main menu state machine). */
-
-/* ---- game clock / init / gameplay subsystems ----
- * Slice 5a landed the NEW-GAME init chain: clock.c (InitGameClock/
- * UninitGameClock/SetGameClockRate/GameClockTick), gameev.c
- * (AddInitialGameEvents), cleanup.c (UninitGameKernel/FreeKernel/FreeGameData),
- * border.c (InitSISContexts), state.c (Init/UninitPlanetInfo), grpinfo.c
- * (Init/UninitGroupInfo), build.c (SetRaceAllied/CloneShipFragment/
- * GetStarShipFromIndex), loadship.c (load_ship/free_ship). Those stubs are
- * gone. The gameplay activities below (ExploreSolarSys/Battle/VisitStarBase/
- * communication/...) stay stubbed — slice 5b. */
-void InstallBombAtEarth () { /* link-only stub */; }
-void VisitStarBase () { /* link-only stub */; }
-void RaceCommunication () { /* link-only stub */; }
-void InitCommunication () { /* link-only stub */; }
-/* ExploreSolarSys — behavioural stub in src/uqm_seam.c (needs GLOBAL/CHECK_ABORT
- * from globdata.h): aborts the game loop so a NEW GAME runs the full init +
- * teardown cycle and returns to the menu instead of spinning forever on a
- * no-op (slice 5a). Real solar-system view is slice 5b. */
-void Battle () { /* link-only stub */; }
-void SeedUniverse () { /* link-only stub */; }
-void InitStatusOffsets () { /* link-only stub */ }
-void InitSpace () { /* link-only stub */ }
-
-/* ---- graphic / cel / font resource loaders — now REAL (resgfx.c / gfxload.c
- *      / font.c / loaddisp.c / filegfx.c compiled). So InstallGraphicResTypes,
- *      LoadGraphicInstance, _Get/ReleaseCelData, _Get/ReleaseFontData,
- *      _text_blt, TextRect, GetContextFontLeading[Width], LoadDisplayPixmap are
- *      gone. Audio/video/code resource types still stubbed. ---- */
-void InstallAudioResTypes () { /* link-only stub */ }
-void InstallVideoResType () { /* link-only stub */ }
-/* InstallCodeResType / LoadCodeResInstance / CaptureCodeRes / ReleaseCodeRes /
- * DestroyCodeRes are now REAL — uqm/dummy.c (the "SHIP" code-resource type
- * handler). It registers the resource type whose loader maps a ship id ->
- * init_<ship>() so LoadMasterShipList can build master_q (slice 5b step 1). */
-
-/* ---- addons (not compiled) ---- */
-void loadAddon () { /* link-only stub */ }
-void prepareAddons () { /* link-only stub */ }
-
-/* TFB_UploadTransitionScreen: normally dispatches through the SDL graphics
- * backend vtable (graphics_backend->uploadTransitionScreen). The cron backend
- * has no transition-upload step (the present is a per-frame full downsample),
- * so this is a no-op. */
-void TFB_UploadTransitionScreen () { /* link-only stub */ }
-
-/* sdluio_loadImage is now REAL — src/img_cron.c (PNG decode via stb_image,
- * reading through uio). */
-void SleepGame () { /* link-only stub */ }
-void PauseGame () { /* link-only stub */ }
-void BeginInputFrame () { /* link-only stub */ }
-void DoConfirmExit () { /* link-only stub */ }
-void TFB_ResetControls () { /* link-only stub */ }
-void NotPositional () { /* link-only stub */ }
-void PlaySoundEffect () { /* link-only stub */ }
-void Victory () { /* link-only stub */ }
-void Credits () { /* link-only stub */ }
-void StopMusic () { /* link-only stub */ }
-void DestroyMusic () { /* link-only stub */ }
-void SeedRandomNumbers () { /* link-only stub */ }
-void Melee () { /* link-only stub */ }
-void Introduction () { /* link-only stub */ }
-void *LoadMusicInstance () { return 0; }  /* no audio yet -> hMusic = 0 (skipped) */
-void PlayMusic () { /* link-only stub */ }
-void SetupMenu () { /* link-only stub */ }
-void DoPopupWindow () { /* link-only stub */ }
-/* FadeMusic returns a TimeCount (callers do SleepThreadUntil(FadeMusic(...)));
- * return 0 (a past deadline) so the sleep is a no-op. */
-uint32_t FadeMusic () { return 0; }
-void check_hyperspace_encounter () { /* link-only stub */ }
-void square_root () { /* link-only stub */ }
-void UninitVideoPlayer () { /* link-only stub */ }
-void UninitSound () { /* link-only stub */ }
-void FreeLanderData () { /* link-only stub */ }
-void FreeHyperData () { /* link-only stub */ }
-void UninitSpace () { /* link-only stub */ }
-void DestroySound () { /* link-only stub */ }
-void DrawStarConBox () { /* link-only stub */ }
-void TFB_Random () { /* link-only stub */ }
-void load_animation () { /* link-only stub */ }
-void free_image () { /* link-only stub */ }
+#define STUB_TRAP(fn)  void fn (void) { cron_stub_unreached (#fn); }
 
 /* ====================================================================== *
- * BATTLE-SUBSYSTEM BOUNDARY (slice 5b step 1).                            *
- *                                                                        *
- * The 28 ship TUs (uqm/ships/*) + dummy.c are now compiled so that       *
- * LoadMasterShipList can build master_q (load_ship -> LoadCodeRes ->     *
- * init_<ship> -> the ship's static RACE_DESC). Each ship's RACE_DESC is  *
- * loaded with LoadBattleData=FALSE, so only init_<ship> + its icon/melee/*
- * race-string resources are exercised at load time.                      *
- *                                                                        *
- * Every ship file ALSO defines its battle AI / preprocess / weapon-init  *
- * functions, which reference the COMBAT engine below (cyborg=AI,         *
- * weapon, process=ELEMENT system, tactrans=tactical transitions,         *
- * gravity, velocity, status, ship, hyper, sounds, trans, misc). Those    *
- * combat functions are ONLY invoked during battle frames — NEVER while   *
- * building the master ship list. They are stubbed here as the boundary   *
- * of the battle/melee subsystem, which is not yet brought up. When that  *
- * subsystem lands (its owning TUs added to KEEP), these stubs come out.  *
+ * 1. DELIBERATE no-ops / return-0 — reached on the live path, graceful.   *
  * ====================================================================== */
-/* process.c — the ELEMENT system */
-/* tactrans.c — tactical transitions / battle outcome */
-void StartShipExplosion () { /* battle-boundary stub */ }
-void FindAliveStarShip () { /* battle-boundary stub */ }
-void GetWinnerStarShip () { /* battle-boundary stub */ }
-void SetWinnerStarShip () { /* battle-boundary stub */ }
-void RecordShipDeath () { /* battle-boundary stub */ }
-void StopAllBattleMusic () { /* battle-boundary stub */ }
-/* weapon.c — projectile / laser init + collision */
-void initialize_laser () { /* battle-boundary stub */ }
-void initialize_missile () { /* battle-boundary stub */ }
-void weapon_collision () { /* battle-boundary stub */ }
-void ModifySilhouette () { /* battle-boundary stub */ }
-void TrackShip () { /* battle-boundary stub */ }
-/* cyborg.c — ship AI */
-void ship_intelligence () { /* battle-boundary stub */ }
-void ship_weapons () { /* battle-boundary stub */ }
-void PlotIntercept () { /* battle-boundary stub */ }
-/* ship.c — per-ship physics */
-void collision () { /* battle-boundary stub */ }
-void inertial_thrust () { /* battle-boundary stub */ }
-/* velocity.c — velocity vector math */
-void DeltaVelocityComponents () { /* battle-boundary stub */ }
-void GetCurrentVelocityComponents () { /* battle-boundary stub */ }
-void GetNextVelocityComponents () { /* battle-boundary stub */ }
-void SetVelocityComponents () { /* battle-boundary stub */ }
-void SetVelocityVector () { /* battle-boundary stub */ }
-/* gravity.c — gravity / matter conflict */
-void CalculateGravity () { /* battle-boundary stub */ }
-void TimeSpaceMatterConflict () { /* battle-boundary stub */ }
-/* status.c — combat crew/energy deltas */
-void DeltaCrew () { /* battle-boundary stub */ }
-void DeltaEnergy () { /* battle-boundary stub */ }
-/* sounds.c — battle audio (also the audio platform seam, not yet built) */
-void ProcessSound () { /* battle-boundary stub */ }
-void PlaySound () { /* battle-boundary stub */ }
-void CalcSoundPosition () { /* battle-boundary stub */ }
-/* misc.c / hyper.c / trans.c — battle-reachable leaves */
-void AbandonShip () { /* battle-boundary stub */ }
-void HyperspaceMenu () { /* battle-boundary stub */ }
+
+/* ---- audio / video: no backend yet, so every call is a silent no-op.
+ *      These ARE invoked during normal play (menu sounds, music, SFX). ---- */
+void initAudio () { }
+void InitSound () { }
+void UninitSound () { }
+void StopSound () { }
+void DestroySound () { }
+void PlaySoundEffect () { }
+void PlayMusic () { }
+void StopMusic () { }
+void DestroyMusic () { }
+void InitVideoPlayer () { }
+void UninitVideoPlayer () { }
+void InstallAudioResTypes () { }
+void InstallVideoResType () { }
+void ProcessSound () { }
+void PlaySound () { }
+void CalcSoundPosition () { }
+void SetPlanetMusic () { }
+void NotPositional () { }
+void FlushSounds () { }
+void RemoveSoundsForObject () { }
+void UpdateSoundPositions () { }
+/* Value-returning audio handles: 0/NULL is the CORRECT sentinel (a captured
+ * NULL handle makes the dependent op a guarded no-op — NOT garbage). */
+void *LoadSoundInstance () { return 0; }      /* -> MenuSounds == NULL -> skipped */
+void *LoadMusicInstance () { return 0; }      /* -> hMusic == NULL -> skipped */
+uint32_t FadeMusic () { return 0; }           /* a past deadline -> SleepThreadUntil no-op */
+int PLRPlaying () { return 0; }               /* nothing is ever playing */
+
+/* ---- behavioural seams / graceful degradation (reached, no corruption) ---- */
+/* SplashScreen: MUST invoke its callback (BackgroundInitKernel runs
+ * LoadMasterShipList); we just skip the splash graphic. */
+void SplashScreen (void (*DoProcessing)(DWORD TimeOut)) { if (DoProcessing) DoProcessing (0); }
+/* The cron present is a per-frame full downsample; no transition upload step. */
+void TFB_UploadTransitionScreen () { }
+/* No addon packs. */
+void loadAddon () { }
+void prepareAddons () { }
+/* Input-frame bookkeeping — harmless to skip. */
+void BeginInputFrame () { }
+void DoConfirmExit () { }
+void TFB_ResetControls () { }
+/* MoveSIS(SIZE*,SIZE*): the real one (hyper.c) moves the flagship by the input
+ * delta; a no-op leaves the deltas untouched, so the flagship just sits still
+ * — graceful for now (it does NOT return garbage). Compiling hyper.c is a
+ * later slice. */
+void MoveSIS () { }
+/* Alarm timer lib not built — no scheduled alarms. */
+void Alarm_addAbsoluteMs () { }
+void Alarm_remove () { }
+/* util.c (UI box / RNG seed / pause) not yet compiled; these no-op gracefully
+ * (a missing box / unseeded-but-deterministic RNG / no pause). Void, no garbage. */
+void DrawStarConBox () { }
+void SeedRandomNumbers () { }
+void PauseGame () { }
+void SleepGame () { }
+/* Battle/hyper DATA teardown — nothing was allocated (those subsystems are
+ * stubbed), so freeing is a no-op. Void, no garbage. */
+void FreeLanderData () { }
+void FreeHyperData () { }
+/* init.c space setup — InitSISContexts/the view ran fine with these no-op'd;
+ * keep them graceful (they may sit on the view-init path). */
+void InitSpace () { }
+void UninitSpace () { }
+void InitStatusOffsets () { }
+/* LoadLanderData is called by InitSolarSys (solarsys.c) ON the view-init path,
+ * not just on landing — no-op (no lander data) is graceful; void, no garbage. */
+void LoadLanderData () { }
+/* On the New-Game / IP-flight path, reached + graceful (void, no garbage). The
+ * intro story, universe seeding (state already set by InitGameStructures) and
+ * the per-tick hyperspace-encounter check no-op until those subsystems land. */
+void Introduction () { }
+void SeedUniverse () { }
+void check_hyperspace_encounter () { }
+/* DrawMenuStateStrings: the SIS panel draws the status-text bar every frame
+ * (sis.c) — void, on the passive view path; no-op = no bottom text (graceful). */
+void DrawMenuStateStrings () { }
 
 /* ====================================================================== *
- * INTERPLANETARY-FEATURE BOUNDARY (slice 5b).                             *
- * The interplanetary view (solarsys/planets/process/sis/ipdisp) is now    *
- * compiled. Features reachable FROM it only by player action stay stubbed *
- * at the boundary until their own slices: planet scan/surface generation  *
- * (scan/pl_stuff/plangen/generate/lander), the SIS sub-menus (cargo/       *
- * devices/roster), the star map (pstarmap/starmap), game options (menu/    *
- * gameopt), hyperspace movement (hyper: MoveSIS/MoveGalaxy), the alarm     *
- * timer lib, and battle leaves pulled in by process.c (collide/do_damage). *
- * Audio (PLR/sound/lander music) is the genuine not-yet-built platform     *
- * seam. ====================================================================*/
-int PLRPlaying () { return 0; }  /* audio seam: nothing is ever playing */
-void Alarm_addAbsoluteMs () { /* interplanetary-feature boundary stub */ }
-void Alarm_remove () { /* interplanetary-feature boundary stub */ }
-void CargoMenu () { /* interplanetary-feature boundary stub */ }
-void DestroyScanContext () { /* interplanetary-feature boundary stub */ }
-void DevicesMenu () { /* interplanetary-feature boundary stub */ }
-void DoMenuChooser () { /* interplanetary-feature boundary stub */ }
-void DrawDefaultPlanetSphere () { /* interplanetary-feature boundary stub */ }
-void DrawMenuStateStrings () { /* interplanetary-feature boundary stub */ }
-void DrawPlanet () { /* interplanetary-feature boundary stub */ }
-void FlushSounds () { /* interplanetary-feature boundary stub */ }
-void GameOptions () { /* interplanetary-feature boundary stub */ }
-void GeneratePlanetSide () { /* interplanetary-feature boundary stub */ }
-void GeneratePlanetSurface () { /* interplanetary-feature boundary stub */ }
-void GetScanContext () { /* interplanetary-feature boundary stub */ }
-void LoadLanderData () { /* interplanetary-feature boundary stub */ }
-void MoveGalaxy () { /* interplanetary-feature boundary stub */ }
-void MoveSIS () { /* interplanetary-feature boundary stub */ }
-void RemoveSoundsForObject () { /* interplanetary-feature boundary stub */ }
-void RosterMenu () { /* interplanetary-feature boundary stub */ }
-void RotatePlanetSphere () { /* interplanetary-feature boundary stub */ }
-void ScanSystem () { /* interplanetary-feature boundary stub */ }
-void SetPlanetMusic () { /* interplanetary-feature boundary stub */ }
-void StarMap () { /* interplanetary-feature boundary stub */ }
-void UninitSphereRotation () { /* interplanetary-feature boundary stub */ }
-void UpdateSoundPositions () { /* interplanetary-feature boundary stub */ }
-void ZoomInPlanetSphere () { /* interplanetary-feature boundary stub */ }
-void collide () { /* interplanetary-feature boundary stub */ }
-void do_damage () { /* interplanetary-feature boundary stub */ }
+ * 2. STUB_TRAP — must never be reached on boot / menu / interplanetary.   *
+ *    If hit, it is a mis-classification: instant named halt, not garbage. *
+ * ====================================================================== */
 
-/* ====================================================================== *
- * PLANET-SURFACE / SCAN BOUNDARY (slice 5b cont.).                        *
- * The planet generators (planets/generate/*.c) place the planets in each  *
- * system (generatePlanets — runs in the system view). Their generateMineral/
- * Energy/Life + generateOrbital hooks call the planet-SURFACE engine, which *
- * runs only when the player orbits/scans a world — deeper than the system  *
- * view. Those surface/scan/lander/report TUs stay boundary-stubbed here.   *
- * The COUNT/bool hooks return 0/false (no nodes) so nothing downstream      *
- * loops on a garbage count. ============================================== */
-int  GenerateLifeForms ()       { return 0; }  /* surface.c */
-int  GenerateMineralDeposits () { return 0; }  /* surface.c */
-int  GeneratePresetLife ()      { return 0; }  /* surface.c */
-int  GenerateRandomNodes ()     { return 0; }  /* surface.c */
-int  countNodesRetrieved ()     { return 0; }  /* scan.c */
-int  isNodeRetrieved ()         { return 0; }  /* scan.c */
-void setNodeRetrieved ()        { /* scan.c */ }
-void DoDiscoveryReport ()       { /* report.c */ }
-void KillLanderCrewSeq ()       { /* lander.c */ }
-void SetLanderTakeoff ()        { /* lander.c */ }
+/* ---- battle / melee combat engine (cyborg AI, weapon, ship physics,
+ *      velocity, gravity, status deltas, tactical transitions). Reached only
+ *      in an actual battle. Many return values → a void stub would be a
+ *      garbage landmine, hence TRAP. ---- */
+STUB_TRAP (ship_intelligence)
+STUB_TRAP (ship_weapons)
+STUB_TRAP (PlotIntercept)
+STUB_TRAP (computer_intelligence)
+STUB_TRAP (selectShipComputer)
+STUB_TRAP (battleEndReadyComputer)
+STUB_TRAP (frameInputHuman)
+STUB_TRAP (selectShipHuman)
+STUB_TRAP (battleEndReadyHuman)
+STUB_TRAP (initialize_laser)
+STUB_TRAP (initialize_missile)
+STUB_TRAP (weapon_collision)
+STUB_TRAP (ModifySilhouette)
+STUB_TRAP (TrackShip)
+STUB_TRAP (collision)
+STUB_TRAP (inertial_thrust)
+STUB_TRAP (CalculateGravity)
+STUB_TRAP (TimeSpaceMatterConflict)
+STUB_TRAP (DeltaCrew)
+STUB_TRAP (DeltaEnergy)
+STUB_TRAP (StartShipExplosion)
+STUB_TRAP (FindAliveStarShip)
+STUB_TRAP (GetWinnerStarShip)
+STUB_TRAP (SetWinnerStarShip)
+STUB_TRAP (RecordShipDeath)
+STUB_TRAP (StopAllBattleMusic)
+STUB_TRAP (AbandonShip)
+STUB_TRAP (Battle)
+STUB_TRAP (collide)
+STUB_TRAP (do_damage)
+STUB_TRAP (load_animation)   /* load_ship(LoadBattleData=TRUE) only — we pass FALSE */
+STUB_TRAP (free_image)       /* free_ship(FreeBattleData=TRUE) only */
+
+/* ---- planet-SURFACE engine + scan/lander/report: reached only when the
+ *      player ORBITS or SCANS a world (deeper than the system view). ---- */
+STUB_TRAP (GenerateLifeForms)
+STUB_TRAP (GenerateMineralDeposits)
+STUB_TRAP (GeneratePresetLife)
+STUB_TRAP (GenerateRandomNodes)
+STUB_TRAP (countNodesRetrieved)
+STUB_TRAP (isNodeRetrieved)
+STUB_TRAP (setNodeRetrieved)
+STUB_TRAP (DoDiscoveryReport)
+STUB_TRAP (KillLanderCrewSeq)
+STUB_TRAP (SetLanderTakeoff)
+STUB_TRAP (DestroyScanContext)
+STUB_TRAP (GetScanContext)
+STUB_TRAP (ScanSystem)
+STUB_TRAP (GeneratePlanetSide)
+STUB_TRAP (GeneratePlanetSurface)
+STUB_TRAP (DrawPlanet)
+STUB_TRAP (DrawDefaultPlanetSphere)
+STUB_TRAP (RotatePlanetSphere)
+STUB_TRAP (ZoomInPlanetSphere)
+STUB_TRAP (UninitSphereRotation)
+
+/* ---- sub-menus / star map / communication / leaf activities: reached only
+ *      by a specific player action we have not enabled yet. ---- */
+STUB_TRAP (CargoMenu)
+STUB_TRAP (DevicesMenu)
+STUB_TRAP (RosterMenu)
+STUB_TRAP (StarMap)
+STUB_TRAP (MoveGalaxy)
+STUB_TRAP (DoMenuChooser)
+STUB_TRAP (GameOptions)
+STUB_TRAP (VisitStarBase)
+STUB_TRAP (RaceCommunication)
+STUB_TRAP (InitCommunication)
+STUB_TRAP (SetupMenu)
+STUB_TRAP (DoPopupWindow)
+STUB_TRAP (Melee)
+STUB_TRAP (Victory)
+STUB_TRAP (Credits)
+STUB_TRAP (InstallBombAtEarth)
+STUB_TRAP (HyperspaceMenu)
