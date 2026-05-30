@@ -253,6 +253,11 @@ SURF_SRCS=(
   "$US/uqm/planets/gentopo.c"
   "$US/uqm/planets/surface.c"
   "$US/uqm/planets/scan.c"
+  "$US/uqm/planets/report.c"       # the discovery report ("you found N minerals...")
+  "$US/uqm/util.c"                 # UI utility leaf: SaveContextFrame, WaitForAny
+                                   # Button(Until)/WaitForNoInput(Until), DrawStarConBox,
+                                   # SeedRandomNumbers, Pause/SleepGame — report.c +
+                                   # others need these; also retires several stubs.
   "$US/uqm/cons_res.c"
   "$US/uqm/planets/lander.c"       # the LANDER minigame: descend to a planet
                                    # surface, drive the lander, collect minerals/

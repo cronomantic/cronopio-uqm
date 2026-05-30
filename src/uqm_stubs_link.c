@@ -96,10 +96,6 @@ void Alarm_addAbsoluteMs () { }
 void Alarm_remove () { }
 /* util.c (UI box / RNG seed / pause) not yet compiled; these no-op gracefully
  * (a missing box / unseeded-but-deterministic RNG / no pause). Void, no garbage. */
-void DrawStarConBox () { }
-void SeedRandomNumbers () { }
-void PauseGame () { }
-void SleepGame () { }
 /* Battle/hyper DATA teardown — nothing was allocated (those subsystems are
  * stubbed), so freeing is a no-op. Void, no garbage. */
 void FreeHyperData () { }
@@ -164,7 +160,6 @@ STUB_TRAP (free_image)       /* free_ship(FreeBattleData=TRUE) only */
 
 /* ---- planet-SURFACE engine + scan/lander/report: reached only when the
  *      player ORBITS or SCANS a world (deeper than the system view). ---- */
-STUB_TRAP (DoDiscoveryReport)
 
 /* ---- sub-menus / star map / communication / leaf activities: reached only
  *      by a specific player action we have not enabled yet. ---- */
@@ -191,6 +186,20 @@ STUB_TRAP (HyperspaceMenu)
 void PlayMenuSound () { }            /* audio no-op (sounds.c) */
 /* WaitForAnyButtonUntil(newButton,timeOut,...) -> BOOLEAN: 0 = "timed out, no
  * button" is the correct sentinel (the scan screen auto-advances), not garbage. */
-int WaitForAnyButtonUntil () { return 0; }
 /* lander.c — the LANDING minigame (deeper than orbit/scan); not reached by the
  * scan path, so STUB_TRAP (loud if a descent is ever triggered). */
+
+/* ---- report.c + util.c boundary (the discovery report + UI utilities) ---- */
+/* SetSystemRect/ClearSystemRect live in the SDL backend's sdl_common.c (we use
+ * src/sdl_compat.c instead). They track a dirty "system rect" for partial
+ * redraws; the cron present does a full per-frame downsample, so this is a
+ * graceful no-op (void). */
+void SetSystemRect () { }
+void ClearSystemRect () { }
+/* Music/track player — audio not built; no-op, and PlayingTrack reports COUNT 0
+ * ("nothing playing", the correct sentinel). */
+void PauseMusic () { }
+void PauseTrack () { }
+void ResumeMusic () { }
+void ResumeTrack () { }
+int PlayingTrack () { return 0; }
