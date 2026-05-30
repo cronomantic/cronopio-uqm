@@ -177,12 +177,59 @@ IP_SRCS=(
   "$US/uqm/ipdisp.c"
   "$US/uqm/process.c"
   "$US/port.c"
+  "$US/uqm/trans.c"                # ARCTAN + sinetab — the angle/sine math the
+                                   # whole game uses (SINE/COSINE/orbital angles);
+                                   # a clean leaf (no deps). Mis-stubbing ARCTAN +
+                                   # the empty sinetab gave garbage planet frames →
+                                   # DrawStamp drew a garbage-sized stamp = hang.
   "$US/libs/math/random2.c"
   "$US/libs/graphics/intersec.c"
   "$US/libs/graphics/boxint.c"     # BoxIntersect/BoxUnion (clean geometry leaf)
   "$US/libs/graphics/clipline.c"   # _clip_line (clean line-clip leaf, used by oval)
   "$US/uqm/plandata.c"             # the galaxy: starmap_array (FindStar) + element/planet tables
   "$US/uqm/starmap.c"              # FindStar/GetClusterName/CurStarDescPtr/star_array (locate the system)
+)
+
+# Slice 5b cont.: PLANET GENERATION — populate each solar system with its planets.
+# gendef.c's getGenerateFunctions maps a star Index -> that system's generator
+# table (Sol -> generateSolFunctions); it hard-references all ~29 generate*Functions
+# tables, so EVERY planets/generate/*.c must link (same hard-ref pattern as
+# ships+dummy.c). gendefault.c is the shared default generator the per-system ones
+# fall back to. These place the planets (generatePlanets); the deeper planet-SURFACE
+# engine (gentopo/plangen/surface/pl_stuff — needs libm exp/acos) and the scan/
+# lander/life/mineral INTERACTION reached only on planet orbit/scan stay boundary-
+# stubbed for now.
+GEN_SRCS=(
+  "$US/uqm/gendef.c"
+  "$US/uqm/planets/generate/gendefault.c"
+  "$US/uqm/planets/generate/genand.c"
+  "$US/uqm/planets/generate/genburv.c"
+  "$US/uqm/planets/generate/genchmmr.c"
+  "$US/uqm/planets/generate/gencol.c"
+  "$US/uqm/planets/generate/gendru.c"
+  "$US/uqm/planets/generate/genilw.c"
+  "$US/uqm/planets/generate/genmel.c"
+  "$US/uqm/planets/generate/genmyc.c"
+  "$US/uqm/planets/generate/genorz.c"
+  "$US/uqm/planets/generate/genpet.c"
+  "$US/uqm/planets/generate/genpku.c"
+  "$US/uqm/planets/generate/genrain.c"
+  "$US/uqm/planets/generate/gensam.c"
+  "$US/uqm/planets/generate/genshof.c"
+  "$US/uqm/planets/generate/gensly.c"
+  "$US/uqm/planets/generate/gensol.c"
+  "$US/uqm/planets/generate/genspa.c"
+  "$US/uqm/planets/generate/gensup.c"
+  "$US/uqm/planets/generate/gensyr.c"
+  "$US/uqm/planets/generate/genthrad.c"
+  "$US/uqm/planets/generate/gentrap.c"
+  "$US/uqm/planets/generate/genutw.c"
+  "$US/uqm/planets/generate/genvault.c"
+  "$US/uqm/planets/generate/genvux.c"
+  "$US/uqm/planets/generate/genwreck.c"
+  "$US/uqm/planets/generate/genyeh.c"
+  "$US/uqm/planets/generate/genzfpscout.c"
+  "$US/uqm/planets/generate/genzoq.c"
 )
 
 # libs/uio — the faithful UQM virtual filesystem (reads the .uqm content
@@ -314,6 +361,7 @@ echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
   "${UQM_SRCS[@]}" \
   "${SHIP_SRCS[@]}" \
   "${IP_SRCS[@]}" \
+  "${GEN_SRCS[@]}" \
   "${UIO_SRCS[@]}" \
   "${RES_SRCS[@]}" \
   "${STR_SRCS[@]}" \

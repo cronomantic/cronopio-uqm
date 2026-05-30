@@ -191,7 +191,6 @@ void CalcSoundPosition () { /* battle-boundary stub */ }
 /* misc.c / hyper.c / trans.c — battle-reachable leaves */
 void AbandonShip () { /* battle-boundary stub */ }
 void HyperspaceMenu () { /* battle-boundary stub */ }
-void ARCTAN () { /* battle-boundary stub */ }
 
 /* ====================================================================== *
  * INTERPLANETARY-FEATURE BOUNDARY (slice 5b).                             *
@@ -233,3 +232,23 @@ void UpdateSoundPositions () { /* interplanetary-feature boundary stub */ }
 void ZoomInPlanetSphere () { /* interplanetary-feature boundary stub */ }
 void collide () { /* interplanetary-feature boundary stub */ }
 void do_damage () { /* interplanetary-feature boundary stub */ }
+
+/* ====================================================================== *
+ * PLANET-SURFACE / SCAN BOUNDARY (slice 5b cont.).                        *
+ * The planet generators (planets/generate/*.c) place the planets in each  *
+ * system (generatePlanets — runs in the system view). Their generateMineral/
+ * Energy/Life + generateOrbital hooks call the planet-SURFACE engine, which *
+ * runs only when the player orbits/scans a world — deeper than the system  *
+ * view. Those surface/scan/lander/report TUs stay boundary-stubbed here.   *
+ * The COUNT/bool hooks return 0/false (no nodes) so nothing downstream      *
+ * loops on a garbage count. ============================================== */
+int  GenerateLifeForms ()       { return 0; }  /* surface.c */
+int  GenerateMineralDeposits () { return 0; }  /* surface.c */
+int  GeneratePresetLife ()      { return 0; }  /* surface.c */
+int  GenerateRandomNodes ()     { return 0; }  /* surface.c */
+int  countNodesRetrieved ()     { return 0; }  /* scan.c */
+int  isNodeRetrieved ()         { return 0; }  /* scan.c */
+void setNodeRetrieved ()        { /* scan.c */ }
+void DoDiscoveryReport ()       { /* report.c */ }
+void KillLanderCrewSeq ()       { /* lander.c */ }
+void SetLanderTakeoff ()        { /* lander.c */ }

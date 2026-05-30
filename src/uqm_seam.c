@@ -167,44 +167,12 @@ volatile int GameActive;
 const BYTE *Elements;
 const PlanetFrame *PlanData;
 volatile int MouseButtonDown;
-SIZE sinetab[];
 /* pSolarSysState + ExploreSolarSys are now REAL — planets/solarsys.c (slice 5b:
  * the interplanetary solar-system view). The slice-5a behavioural stub that set
  * CHECK_ABORT to bail out of the game loop is gone; New Game now enters the real
  * solar system. */
 
-/* ---------------------------------------------------------------------- */
-/* getGenerateFunctions — behavioural boundary stub for the PLANET-GENERATION
- * subsystem (gendef.c + planets/generate/*.c + the surface generator
- * gentopo/plangen, which need libm). The real one maps a star Index to that
- * system's generator table (Sol -> generateSolFunctions, etc.). Until that
- * subsystem lands, return an all-"handled, empty" table so the interplanetary
- * view (InitSolarSys/DoIpFlight) runs against an empty system instead of
- * dereferencing a NULL genFuncs (the frame-143 null-fn-ptr trap). Every hook
- * returns true (= "handled, do not call the default") with nothing generated,
- * or 0 for the COUNT hooks. Replace with the real generators in the next slice. */
-#include "uqm/planets/generate.h"
-static bool cron_gen_true (SOLARSYS_STATE *s) { (void)s; return true; }
-static bool cron_gen_moons (SOLARSYS_STATE *s, PLANET_DESC *w) { (void)s; (void)w; return true; }
-static bool cron_gen_name (const SOLARSYS_STATE *s, const PLANET_DESC *w) { (void)s; (void)w; return true; }
-static COUNT cron_gen_count (const SOLARSYS_STATE *s, const PLANET_DESC *w, COUNT n, NODE_INFO *ni) { (void)s; (void)w; (void)n; (void)ni; return 0; }
-static bool cron_gen_pickup (SOLARSYS_STATE *s, PLANET_DESC *w, COUNT n) { (void)s; (void)w; (void)n; return true; }
-static const GenerateFunctions cron_empty_genFuncs = {
-    cron_gen_true,   /* initNpcs */
-    cron_gen_true,   /* reinitNpcs */
-    cron_gen_true,   /* uninitNpcs */
-    cron_gen_true,   /* generatePlanets (0 planets) */
-    cron_gen_moons,  /* generateMoons */
-    cron_gen_name,   /* generateName */
-    cron_gen_moons,  /* generateOrbital */
-    cron_gen_count,  /* generateMinerals */
-    cron_gen_count,  /* generateEnergy */
-    cron_gen_count,  /* generateLife */
-    cron_gen_pickup, /* pickupMinerals */
-    cron_gen_pickup, /* pickupEnergy */
-    cron_gen_pickup, /* pickupLife */
-};
-const GenerateFunctions *getGenerateFunctions (BYTE Index) {
-    (void)Index;
-    return &cron_empty_genFuncs;
-}
+/* getGenerateFunctions is now REAL — uqm/gendef.c maps a star Index to that
+ * system's generator table (Sol -> generateSolFunctions in planets/generate/
+ * gensol.c). The behavioural empty-genFuncs stub is gone; the solar system is
+ * now populated with its real planets. */
