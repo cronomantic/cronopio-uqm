@@ -44,6 +44,16 @@ echo "[build] syncing Cronopio tools + host with the current VM..."
 ninja -C "$CRBUILD" cronopio-cc cronopio cronopio-headless || {
   echo "[build] ERROR: building Cronopio tools failed." >&2; exit 1; }
 
+# Build picolibc.bc — the C library (string/mem/ctype/stdlib). It is a gitignored
+# artifact, rebuilt each time so it tracks the picolibc submodule + translator.
+# UQM uses the Cronopio TUNED allocator (-DCRON_LIBC_TUNED_MALLOC below) as the
+# CANONICAL malloc — its O(1) free beats picolibc nano-malloc's O(n) free on the
+# 10559-entry ZIP content mount (~1s vs ~9s). So build picolibc WITHOUT malloc
+# (cron_sys.c supplies it). DOOM/Quake keep picolibc's malloc (no --no-malloc).
+echo "[build] building picolibc.bc (C library, --no-malloc; tuned malloc in cron_sys.c)..."
+bash "$RT/build_picolibc.sh" --no-malloc || {
+  echo "[build] ERROR: build_picolibc.sh failed." >&2; exit 1; }
+
 OUT="${1:-$ROOT/uqm.crom}"
 
 # Include paths: compat/ first (config_cron.h, log_cron.h shadow UQM via -I
@@ -206,8 +216,9 @@ PORT=(
   "$ROOT/src/img_cron.c"
   "$ROOT/src/vid_cron.c"
   "$ROOT/src/main_cron.c"
-  "$SDK/lib/cvm_libc.c"
+  "$SDK/lib/cron_sys.c"
   "$SDK/lib/miniz.c"
+  "$RT/picolibc.bc"
 )
 
 echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
@@ -217,6 +228,7 @@ echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
 # cronopio-port branch of the fork).
 "$CC" \
   -DCRONOPIO \
+  -DCRON_LIBC_TUNED_MALLOC \
   -D_POSIX_NAME_MAX=255 \
   -D_POSIX_PATH_MAX=256 \
   -DMINIZ_NO_DEFLATE_APIS -DMINIZ_NO_ARCHIVE_APIS \
