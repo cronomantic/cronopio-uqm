@@ -85,7 +85,10 @@ void InitSpace () { /* link-only stub */ }
  *      gone. Audio/video/code resource types still stubbed. ---- */
 void InstallAudioResTypes () { /* link-only stub */ }
 void InstallVideoResType () { /* link-only stub */ }
-void InstallCodeResType () { /* link-only stub */ }
+/* InstallCodeResType / LoadCodeResInstance / CaptureCodeRes / ReleaseCodeRes /
+ * DestroyCodeRes are now REAL — uqm/dummy.c (the "SHIP" code-resource type
+ * handler). It registers the resource type whose loader maps a ship id ->
+ * init_<ship>() so LoadMasterShipList can build master_q (slice 5b step 1). */
 void BoxIntersect () { /* link-only stub — intersec.c not compiled */ }
 
 /* ---- addons (not compiled) ---- */
@@ -136,9 +139,69 @@ void ClearSISRect () { /* link-only stub */ }
 void TFB_Random () { /* link-only stub */ }
 void planetOuterLocation () { /* link-only stub */ }
 void DeltaSISGauges () { /* link-only stub */ }
-void LoadCodeResInstance () { /* link-only stub */ }
-void CaptureCodeRes () { /* link-only stub */ }
 void load_animation () { /* link-only stub */ }
-void ReleaseCodeRes () { /* link-only stub */ }
-void DestroyCodeRes () { /* link-only stub */ }
 void free_image () { /* link-only stub */ }
+
+/* ====================================================================== *
+ * BATTLE-SUBSYSTEM BOUNDARY (slice 5b step 1).                            *
+ *                                                                        *
+ * The 28 ship TUs (uqm/ships/*) + dummy.c are now compiled so that       *
+ * LoadMasterShipList can build master_q (load_ship -> LoadCodeRes ->     *
+ * init_<ship> -> the ship's static RACE_DESC). Each ship's RACE_DESC is  *
+ * loaded with LoadBattleData=FALSE, so only init_<ship> + its icon/melee/*
+ * race-string resources are exercised at load time.                      *
+ *                                                                        *
+ * Every ship file ALSO defines its battle AI / preprocess / weapon-init  *
+ * functions, which reference the COMBAT engine below (cyborg=AI,         *
+ * weapon, process=ELEMENT system, tactrans=tactical transitions,         *
+ * gravity, velocity, status, ship, hyper, sounds, trans, misc). Those    *
+ * combat functions are ONLY invoked during battle frames — NEVER while   *
+ * building the master ship list. They are stubbed here as the boundary   *
+ * of the battle/melee subsystem, which is not yet brought up. When that  *
+ * subsystem lands (its owning TUs added to KEEP), these stubs come out.  *
+ * ====================================================================== */
+/* process.c — the ELEMENT system */
+void AllocElement () { /* battle-boundary stub */ }
+void FreeElement () { /* battle-boundary stub */ }
+void RemoveElement () { /* battle-boundary stub */ }
+void Untarget () { /* battle-boundary stub */ }
+/* tactrans.c — tactical transitions / battle outcome */
+void StartShipExplosion () { /* battle-boundary stub */ }
+void FindAliveStarShip () { /* battle-boundary stub */ }
+void GetWinnerStarShip () { /* battle-boundary stub */ }
+void SetWinnerStarShip () { /* battle-boundary stub */ }
+void RecordShipDeath () { /* battle-boundary stub */ }
+void StopAllBattleMusic () { /* battle-boundary stub */ }
+/* weapon.c — projectile / laser init + collision */
+void initialize_laser () { /* battle-boundary stub */ }
+void initialize_missile () { /* battle-boundary stub */ }
+void weapon_collision () { /* battle-boundary stub */ }
+void ModifySilhouette () { /* battle-boundary stub */ }
+void TrackShip () { /* battle-boundary stub */ }
+/* cyborg.c — ship AI */
+void ship_intelligence () { /* battle-boundary stub */ }
+void ship_weapons () { /* battle-boundary stub */ }
+void PlotIntercept () { /* battle-boundary stub */ }
+/* ship.c — per-ship physics */
+void collision () { /* battle-boundary stub */ }
+void inertial_thrust () { /* battle-boundary stub */ }
+/* velocity.c — velocity vector math */
+void DeltaVelocityComponents () { /* battle-boundary stub */ }
+void GetCurrentVelocityComponents () { /* battle-boundary stub */ }
+void GetNextVelocityComponents () { /* battle-boundary stub */ }
+void SetVelocityComponents () { /* battle-boundary stub */ }
+void SetVelocityVector () { /* battle-boundary stub */ }
+/* gravity.c — gravity / matter conflict */
+void CalculateGravity () { /* battle-boundary stub */ }
+void TimeSpaceMatterConflict () { /* battle-boundary stub */ }
+/* status.c — combat crew/energy deltas */
+void DeltaCrew () { /* battle-boundary stub */ }
+void DeltaEnergy () { /* battle-boundary stub */ }
+/* sounds.c — battle audio (also the audio platform seam, not yet built) */
+void ProcessSound () { /* battle-boundary stub */ }
+void PlaySound () { /* battle-boundary stub */ }
+void CalcSoundPosition () { /* battle-boundary stub */ }
+/* misc.c / hyper.c / trans.c — battle-reachable leaves */
+void AbandonShip () { /* battle-boundary stub */ }
+void HyperspaceMenu () { /* battle-boundary stub */ }
+void ARCTAN () { /* battle-boundary stub */ }

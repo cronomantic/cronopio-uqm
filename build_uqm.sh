@@ -109,6 +109,51 @@ UQM_SRCS=(
   "$US/uqm/battlecontrols.c"
 )
 
+# Slice 5b (step 1): populate the MASTER SHIP LIST. dummy.c is the "code
+# resource" type handler — it registers the "SHIP" resource type whose loader
+# maps a ship id -> init_<ship>() (e.g. ARILOU_CODE -> init_arilou), each of
+# which returns that ship's static RACE_DESC. LoadMasterShipList (master.c)
+# calls load_ship (loadship.c) -> LoadCodeRes -> dummy.c for all 25 meleeable
+# ships, building master_q. dummy.c's switch hard-references all 28 init_*
+# symbols, so every ship TU must LINK. We compile them with LoadBattleData=
+# FALSE at load time, so only init_<ship> + the static RACE_DESC + the
+# icon/string resources are exercised; each ship's battle AI/preprocess/weapon
+# functions reference the combat engine (intel/weapon/collide/element) but are
+# NEVER called during master-list build — those combat symbols are link-only
+# stubs (slice 5b battle proper). Quote-includes ("resinst.h"/"icode.h")
+# resolve to each ship's own dir, so no per-ship -I is needed.
+SHIP_SRCS=(
+  "$US/uqm/dummy.c"
+  "$US/uqm/ships/androsyn/androsyn.c"
+  "$US/uqm/ships/arilou/arilou.c"
+  "$US/uqm/ships/blackurq/blackurq.c"
+  "$US/uqm/ships/chenjesu/chenjesu.c"
+  "$US/uqm/ships/chmmr/chmmr.c"
+  "$US/uqm/ships/druuge/druuge.c"
+  "$US/uqm/ships/human/human.c"
+  "$US/uqm/ships/ilwrath/ilwrath.c"
+  "$US/uqm/ships/lastbat/lastbat.c"
+  "$US/uqm/ships/melnorme/melnorme.c"
+  "$US/uqm/ships/mmrnmhrm/mmrnmhrm.c"
+  "$US/uqm/ships/mycon/mycon.c"
+  "$US/uqm/ships/orz/orz.c"
+  "$US/uqm/ships/pkunk/pkunk.c"
+  "$US/uqm/ships/probe/probe.c"
+  "$US/uqm/ships/shofixti/shofixti.c"
+  "$US/uqm/ships/sis_ship/sis_ship.c"
+  "$US/uqm/ships/slylandr/slylandr.c"
+  "$US/uqm/ships/spathi/spathi.c"
+  "$US/uqm/ships/supox/supox.c"
+  "$US/uqm/ships/syreen/syreen.c"
+  "$US/uqm/ships/thradd/thradd.c"
+  "$US/uqm/ships/umgah/umgah.c"
+  "$US/uqm/ships/urquan/urquan.c"
+  "$US/uqm/ships/utwig/utwig.c"
+  "$US/uqm/ships/vux/vux.c"
+  "$US/uqm/ships/yehat/yehat.c"
+  "$US/uqm/ships/zoqfot/zoqfot.c"
+)
+
 # libs/uio — the faithful UQM virtual filesystem (reads the .uqm content
 # packs, which are ZIPs). Bring-up in progress: backed on our libc stdio +
 # cron_rom; the zip layer needs a zlib inflate (TBD). Listed separately so
@@ -236,6 +281,7 @@ echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
   -DHAVE_ZIP \
   "${INCS[@]}" \
   "${UQM_SRCS[@]}" \
+  "${SHIP_SRCS[@]}" \
   "${UIO_SRCS[@]}" \
   "${RES_SRCS[@]}" \
   "${STR_SRCS[@]}" \
