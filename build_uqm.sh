@@ -154,6 +154,37 @@ SHIP_SRCS=(
   "$US/uqm/ships/zoqfot/zoqfot.c"
 )
 
+# Slice 5b: the INTERPLANETARY solar-system view (the real ExploreSolarSys).
+# solarsys.c is the view itself; planets.c/orbits.c/calc.c/oval.c place + draw
+# the sun, planets and their orbit ellipses; process.c is the ELEMENT display
+# list (the flagship + planets are display elements; also provides AllocElement/
+# RedrawQueue, shared with battle); ipdisp.c drives the interplanetary display;
+# sis.c draws the SIS status panel (the flagship cutaway + crew/fuel gauges);
+# port.c supplies strupr (sis.c uses it); libs/math/random2.c is the RNG context
+# the planet code seeds with; libs/graphics/intersec.c is DrawablesIntersect/
+# BoxIntersect. Deeper features reachable FROM the view but only by player
+# action — planet scan/lander/surface generation (scan/lander/pl_stuff/plangen/
+# generate), the SIS menus (cargo/devices/roster), the star map (pstarmap/
+# starmap) and game options (menu/gameopt) — stay boundary-stubbed until their
+# own slices.
+IP_SRCS=(
+  "$US/uqm/planets/solarsys.c"
+  "$US/uqm/planets/planets.c"
+  "$US/uqm/planets/orbits.c"
+  "$US/uqm/planets/calc.c"
+  "$US/uqm/planets/oval.c"
+  "$US/uqm/sis.c"
+  "$US/uqm/ipdisp.c"
+  "$US/uqm/process.c"
+  "$US/port.c"
+  "$US/libs/math/random2.c"
+  "$US/libs/graphics/intersec.c"
+  "$US/libs/graphics/boxint.c"     # BoxIntersect/BoxUnion (clean geometry leaf)
+  "$US/libs/graphics/clipline.c"   # _clip_line (clean line-clip leaf, used by oval)
+  "$US/uqm/plandata.c"             # the galaxy: starmap_array (FindStar) + element/planet tables
+  "$US/uqm/starmap.c"              # FindStar/GetClusterName/CurStarDescPtr/star_array (locate the system)
+)
+
 # libs/uio — the faithful UQM virtual filesystem (reads the .uqm content
 # packs, which are ZIPs). Bring-up in progress: backed on our libc stdio +
 # cron_rom; the zip layer needs a zlib inflate (TBD). Listed separately so
@@ -282,6 +313,7 @@ echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
   "${INCS[@]}" \
   "${UQM_SRCS[@]}" \
   "${SHIP_SRCS[@]}" \
+  "${IP_SRCS[@]}" \
   "${UIO_SRCS[@]}" \
   "${RES_SRCS[@]}" \
   "${STR_SRCS[@]}" \

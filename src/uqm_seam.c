@@ -133,8 +133,18 @@ ACTIVITY NextActivity;
 /* LastActivity / FlagStatFrame / MiscDataFrame / FontGradFrame / GameStrings /
  * Screen — now defined by uqm/setup.c (in KEEP).
  * master_q — defined by uqm/master.c (in KEEP). */
-STAR_DESC *CurStarDescPtr;
-PRIMITIVE DisplayArray[MAX_DISPLAY_PRIMS];
+/* DisplayArray — now defined by uqm/process.c (the ELEMENT display list, in KEEP). */
+/* Interplanetary-view globals normally owned by settings.c / hyper.c / lander.c,
+ * not yet in KEEP. The opt* flags default to 0 (PC menus/fonts, no melee scale,
+ * mono SFX) which is the desired baseline; the rest are state the boundary-
+ * stubbed features would own. */
+int optWhichMenu;
+int optWhichFonts;
+int optMeleeScale;
+BOOLEAN optStereoSFX;
+FRAME stars_in_space;
+MUSIC_REF LanderMusic;
+POINT SpaceOrg;
 volatile int QuitPosted;
 BOOLEAN opt3doMusic;
 BOOLEAN optSpeech;
@@ -148,29 +158,53 @@ volatile int GameActive;
 
 /* Game-data tables referenced by StartGame's tail (restart.c:399 —
  * star_array=starmap_array; Elements=element_array; PlanData=planet_array).
- * That code only runs when a game actually STARTS; the menu (SETUP/QUIT/idle)
- * exits before it, so [1] stubs that link but are never dereferenced on the
- * menu path are sufficient. Real tables live in big generated data TUs
- * (starmap/elemdata/plandata) — bring them in when gameplay lands. */
+ * The real tables (starmap_array = the galaxy's stars, element_array,
+ * planet_array) now come from uqm/plandata.c (slice 5b: the interplanetary
+ * view's FindStar searches starmap_array to locate the current system — the
+ * [1] stubs made it "do not know where you are"). The pointers star_array/
+ * Elements/PlanData are assigned by restart.c and owned here. */
 #include "uqm/planets/plandata.h"   /* PlanetFrame */
-STAR_DESC starmap_array[1];
-STAR_DESC *star_array;
-const BYTE element_array[1];
 const BYTE *Elements;
-const PlanetFrame planet_array[1];
 const PlanetFrame *PlanData;
 volatile int MouseButtonDown;
-SOLARSYS_STATE *pSolarSysState;
 SIZE sinetab[];
+/* pSolarSysState + ExploreSolarSys are now REAL — planets/solarsys.c (slice 5b:
+ * the interplanetary solar-system view). The slice-5a behavioural stub that set
+ * CHECK_ABORT to bail out of the game loop is gone; New Game now enters the real
+ * solar system. */
 
-/* ExploreSolarSys — slice-5a behavioural stub. The real one (planets/solarsys.c,
- * slice 5b) runs the interplanetary view until the player leaves, updating
- * GLOBAL(CurrentActivity). A no-op would make starcon.c's game loop
- * (do { ... ExploreSolarSys(); } while (!(CurrentActivity & CHECK_ABORT)))
- * spin forever WITHOUT yielding, hanging the host. Setting CHECK_ABORT makes a
- * NEW GAME run the full init chain, then cleanly tear down (UninitGameStructures
- * /Clock/ClearPlayerInputAll) and return to the menu — a clean, non-hanging
- * boundary for slice 5a. */
-void ExploreSolarSys (void) {
-    GLOBAL (CurrentActivity) |= CHECK_ABORT;
+/* ---------------------------------------------------------------------- */
+/* getGenerateFunctions — behavioural boundary stub for the PLANET-GENERATION
+ * subsystem (gendef.c + planets/generate/*.c + the surface generator
+ * gentopo/plangen, which need libm). The real one maps a star Index to that
+ * system's generator table (Sol -> generateSolFunctions, etc.). Until that
+ * subsystem lands, return an all-"handled, empty" table so the interplanetary
+ * view (InitSolarSys/DoIpFlight) runs against an empty system instead of
+ * dereferencing a NULL genFuncs (the frame-143 null-fn-ptr trap). Every hook
+ * returns true (= "handled, do not call the default") with nothing generated,
+ * or 0 for the COUNT hooks. Replace with the real generators in the next slice. */
+#include "uqm/planets/generate.h"
+static bool cron_gen_true (SOLARSYS_STATE *s) { (void)s; return true; }
+static bool cron_gen_moons (SOLARSYS_STATE *s, PLANET_DESC *w) { (void)s; (void)w; return true; }
+static bool cron_gen_name (const SOLARSYS_STATE *s, const PLANET_DESC *w) { (void)s; (void)w; return true; }
+static COUNT cron_gen_count (const SOLARSYS_STATE *s, const PLANET_DESC *w, COUNT n, NODE_INFO *ni) { (void)s; (void)w; (void)n; (void)ni; return 0; }
+static bool cron_gen_pickup (SOLARSYS_STATE *s, PLANET_DESC *w, COUNT n) { (void)s; (void)w; (void)n; return true; }
+static const GenerateFunctions cron_empty_genFuncs = {
+    cron_gen_true,   /* initNpcs */
+    cron_gen_true,   /* reinitNpcs */
+    cron_gen_true,   /* uninitNpcs */
+    cron_gen_true,   /* generatePlanets (0 planets) */
+    cron_gen_moons,  /* generateMoons */
+    cron_gen_name,   /* generateName */
+    cron_gen_moons,  /* generateOrbital */
+    cron_gen_count,  /* generateMinerals */
+    cron_gen_count,  /* generateEnergy */
+    cron_gen_count,  /* generateLife */
+    cron_gen_pickup, /* pickupMinerals */
+    cron_gen_pickup, /* pickupEnergy */
+    cron_gen_pickup, /* pickupLife */
+};
+const GenerateFunctions *getGenerateFunctions (BYTE Index) {
+    (void)Index;
+    return &cron_empty_genFuncs;
 }

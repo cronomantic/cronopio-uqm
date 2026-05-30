@@ -62,18 +62,15 @@ void SplashScreen (void (*DoProcessing)(DWORD TimeOut)) {
  * GetStarShipFromIndex), loadship.c (load_ship/free_ship). Those stubs are
  * gone. The gameplay activities below (ExploreSolarSys/Battle/VisitStarBase/
  * communication/...) stay stubbed — slice 5b. */
-void SetStatusMessageMode () { /* link-only stub */; }
 void InstallBombAtEarth () { /* link-only stub */; }
 void VisitStarBase () { /* link-only stub */; }
 void RaceCommunication () { /* link-only stub */; }
 void InitCommunication () { /* link-only stub */; }
-void DrawAutoPilotMessage () { /* link-only stub */; }
 /* ExploreSolarSys — behavioural stub in src/uqm_seam.c (needs GLOBAL/CHECK_ABORT
  * from globdata.h): aborts the game loop so a NEW GAME runs the full init +
  * teardown cycle and returns to the menu instead of spinning forever on a
  * no-op (slice 5a). Real solar-system view is slice 5b. */
 void Battle () { /* link-only stub */; }
-void SetFlashRect () { /* link-only stub */; }
 void SeedUniverse () { /* link-only stub */; }
 void InitStatusOffsets () { /* link-only stub */ }
 void InitSpace () { /* link-only stub */ }
@@ -89,7 +86,6 @@ void InstallVideoResType () { /* link-only stub */ }
  * DestroyCodeRes are now REAL — uqm/dummy.c (the "SHIP" code-resource type
  * handler). It registers the resource type whose loader maps a ship id ->
  * init_<ship>() so LoadMasterShipList can build master_q (slice 5b step 1). */
-void BoxIntersect () { /* link-only stub — intersec.c not compiled */ }
 
 /* ---- addons (not compiled) ---- */
 void loadAddon () { /* link-only stub */ }
@@ -124,21 +120,16 @@ void DoPopupWindow () { /* link-only stub */ }
 /* FadeMusic returns a TimeCount (callers do SleepThreadUntil(FadeMusic(...)));
  * return 0 (a past deadline) so the sleep is a no-op. */
 uint32_t FadeMusic () { return 0; }
-void DrawStatusMessage () { /* link-only stub */ }
 void check_hyperspace_encounter () { /* link-only stub */ }
 void square_root () { /* link-only stub */ }
 void UninitVideoPlayer () { /* link-only stub */ }
 void UninitSound () { /* link-only stub */ }
 void FreeLanderData () { /* link-only stub */ }
-void FreeIPData () { /* link-only stub */ }
 void FreeHyperData () { /* link-only stub */ }
 void UninitSpace () { /* link-only stub */ }
 void DestroySound () { /* link-only stub */ }
 void DrawStarConBox () { /* link-only stub */ }
-void ClearSISRect () { /* link-only stub */ }
 void TFB_Random () { /* link-only stub */ }
-void planetOuterLocation () { /* link-only stub */ }
-void DeltaSISGauges () { /* link-only stub */ }
 void load_animation () { /* link-only stub */ }
 void free_image () { /* link-only stub */ }
 
@@ -161,10 +152,6 @@ void free_image () { /* link-only stub */ }
  * subsystem lands (its owning TUs added to KEEP), these stubs come out.  *
  * ====================================================================== */
 /* process.c — the ELEMENT system */
-void AllocElement () { /* battle-boundary stub */ }
-void FreeElement () { /* battle-boundary stub */ }
-void RemoveElement () { /* battle-boundary stub */ }
-void Untarget () { /* battle-boundary stub */ }
 /* tactrans.c — tactical transitions / battle outcome */
 void StartShipExplosion () { /* battle-boundary stub */ }
 void FindAliveStarShip () { /* battle-boundary stub */ }
@@ -205,3 +192,44 @@ void CalcSoundPosition () { /* battle-boundary stub */ }
 void AbandonShip () { /* battle-boundary stub */ }
 void HyperspaceMenu () { /* battle-boundary stub */ }
 void ARCTAN () { /* battle-boundary stub */ }
+
+/* ====================================================================== *
+ * INTERPLANETARY-FEATURE BOUNDARY (slice 5b).                             *
+ * The interplanetary view (solarsys/planets/process/sis/ipdisp) is now    *
+ * compiled. Features reachable FROM it only by player action stay stubbed *
+ * at the boundary until their own slices: planet scan/surface generation  *
+ * (scan/pl_stuff/plangen/generate/lander), the SIS sub-menus (cargo/       *
+ * devices/roster), the star map (pstarmap/starmap), game options (menu/    *
+ * gameopt), hyperspace movement (hyper: MoveSIS/MoveGalaxy), the alarm     *
+ * timer lib, and battle leaves pulled in by process.c (collide/do_damage). *
+ * Audio (PLR/sound/lander music) is the genuine not-yet-built platform     *
+ * seam. ====================================================================*/
+int PLRPlaying () { return 0; }  /* audio seam: nothing is ever playing */
+void Alarm_addAbsoluteMs () { /* interplanetary-feature boundary stub */ }
+void Alarm_remove () { /* interplanetary-feature boundary stub */ }
+void CargoMenu () { /* interplanetary-feature boundary stub */ }
+void DestroyScanContext () { /* interplanetary-feature boundary stub */ }
+void DevicesMenu () { /* interplanetary-feature boundary stub */ }
+void DoMenuChooser () { /* interplanetary-feature boundary stub */ }
+void DrawDefaultPlanetSphere () { /* interplanetary-feature boundary stub */ }
+void DrawMenuStateStrings () { /* interplanetary-feature boundary stub */ }
+void DrawPlanet () { /* interplanetary-feature boundary stub */ }
+void FlushSounds () { /* interplanetary-feature boundary stub */ }
+void GameOptions () { /* interplanetary-feature boundary stub */ }
+void GeneratePlanetSide () { /* interplanetary-feature boundary stub */ }
+void GeneratePlanetSurface () { /* interplanetary-feature boundary stub */ }
+void GetScanContext () { /* interplanetary-feature boundary stub */ }
+void LoadLanderData () { /* interplanetary-feature boundary stub */ }
+void MoveGalaxy () { /* interplanetary-feature boundary stub */ }
+void MoveSIS () { /* interplanetary-feature boundary stub */ }
+void RemoveSoundsForObject () { /* interplanetary-feature boundary stub */ }
+void RosterMenu () { /* interplanetary-feature boundary stub */ }
+void RotatePlanetSphere () { /* interplanetary-feature boundary stub */ }
+void ScanSystem () { /* interplanetary-feature boundary stub */ }
+void SetPlanetMusic () { /* interplanetary-feature boundary stub */ }
+void StarMap () { /* interplanetary-feature boundary stub */ }
+void UninitSphereRotation () { /* interplanetary-feature boundary stub */ }
+void UpdateSoundPositions () { /* interplanetary-feature boundary stub */ }
+void ZoomInPlanetSphere () { /* interplanetary-feature boundary stub */ }
+void collide () { /* interplanetary-feature boundary stub */ }
+void do_damage () { /* interplanetary-feature boundary stub */ }

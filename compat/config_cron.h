@@ -46,9 +46,12 @@
  * which is the right signal. */
 #define HAVE_READDIR_R 1
 
-/* Same trick: port.h declares strupr() if HAVE_STRUPR is unset. The cart
- * doesn't use it; we set the flag to skip the declaration. */
-#define HAVE_STRUPR 1
+/* strupr() is non-standard (not in picolibc). UQM's own port.c provides it
+ * when HAVE_STRUPR is unset, and port.h declares it. sis.c (slice 5b, the SIS
+ * panel) calls it, so leave HAVE_STRUPR unset and compile port.c (its other
+ * helpers — readdir_r/setenv/snprintf — stay guarded out by HAVE_READDIR_R/
+ * HAVE_SETENV/!_MSC_VER, so port.c reduces to just strupr). */
+/* #undef HAVE_STRUPR -- provided by port.c */
 
 /* port.h declares setenv() if HAVE_SETENV is unset. We don't use it. */
 #define HAVE_SETENV 1
