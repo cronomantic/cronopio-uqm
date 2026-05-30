@@ -90,7 +90,6 @@ void TFB_ResetControls () { }
  * delta; a no-op leaves the deltas untouched, so the flagship just sits still
  * — graceful for now (it does NOT return garbage). Compiling hyper.c is a
  * later slice. */
-void MoveSIS () { }
 /* Alarm timer lib not built — no scheduled alarms. */
 void Alarm_addAbsoluteMs () { }
 void Alarm_remove () { }
@@ -98,7 +97,6 @@ void Alarm_remove () { }
  * (a missing box / unseeded-but-deterministic RNG / no pause). Void, no garbage. */
 /* Battle/hyper DATA teardown — nothing was allocated (those subsystems are
  * stubbed), so freeing is a no-op. Void, no garbage. */
-void FreeHyperData () { }
 /* init.c space setup — InitSISContexts/the view ran fine with these no-op'd;
  * keep them graceful (they may sit on the view-init path). */
 void InitSpace () { }
@@ -110,8 +108,6 @@ void InitStatusOffsets () { }
  * intro story, universe seeding (state already set by InitGameStructures) and
  * the per-tick hyperspace-encounter check no-op until those subsystems land. */
 void Introduction () { }
-void SeedUniverse () { }
-void check_hyperspace_encounter () { }
 /* DrawMenuStateStrings: the SIS panel draws the status-text bar every frame
  * (sis.c) — void, on the passive view path; no-op = no bottom text (graceful). */
 void DrawMenuStateStrings () { }
@@ -139,8 +135,6 @@ STUB_TRAP (initialize_missile)
 STUB_TRAP (weapon_collision)
 STUB_TRAP (ModifySilhouette)
 STUB_TRAP (TrackShip)
-STUB_TRAP (collision)
-STUB_TRAP (inertial_thrust)
 STUB_TRAP (CalculateGravity)
 STUB_TRAP (TimeSpaceMatterConflict)
 STUB_TRAP (DeltaCrew)
@@ -179,7 +173,6 @@ STUB_TRAP (Melee)
 STUB_TRAP (Victory)
 STUB_TRAP (Credits)
 STUB_TRAP (InstallBombAtEarth)
-STUB_TRAP (HyperspaceMenu)
 
 /* ---- planet-surface engine landed (pl_stuff/plangen/gentopo/surface/scan +
  *      cons_res). New boundary it exposes: ---- */
@@ -203,3 +196,22 @@ void PauseTrack () { }
 void ResumeMusic () { }
 void ResumeTrack () { }
 int PlayingTrack () { return 0; }
+
+/* ---- hyper.c + ship.c boundary: the COMBAT/encounter surface a hyperspace
+ *      encounter (or the flagship's combat ship_preprocess) reaches. BattleSong
+ *      -> audio no-op. The rest are battle/melee/combat-status/ion-trail and are
+ *      STUB_TRAP: NOT on the boot/menu/Sol-view path. ⚠ spawn_ion_trail /
+ *      Pre/PostProcessStatus / ship_transition ARE reached once you actually FLY
+ *      in hyperspace (ship.c's per-frame handler) — they'll name themselves then;
+ *      that's the next increment (the combat-status/trail engine). ---- */
+void BattleSong () { }              /* audio no-op */
+STUB_TRAP (DrawCaptainsWindow)
+STUB_TRAP (GetEncounterStarShip)
+STUB_TRAP (GetInitialMeleeStarShips)
+STUB_TRAP (OpponentAlive)
+STUB_TRAP (InitShipStatus)
+STUB_TRAP (PreProcessStatus)
+STUB_TRAP (PostProcessStatus)
+STUB_TRAP (ship_death)
+STUB_TRAP (ship_transition)
+STUB_TRAP (spawn_ion_trail)

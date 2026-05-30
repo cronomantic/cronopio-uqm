@@ -265,6 +265,18 @@ SURF_SRCS=(
                                    # table + InitLander/PlanetSide/object_animation
                                    # + the lander-music/data loaders. Nearly self-
                                    # contained (deps already in the build).
+  "$US/uqm/hyper.c"                # HYPERSPACE navigation: leave Sol + fly the
+                                   # galaxy. Provides MoveSIS (real flagship move!),
+                                   # SeedUniverse (the galaxy's alien fleets),
+                                   # check_hyperspace_encounter, HyperspaceMenu.
+  "$US/uqm/ship.c"                 # the player-ship element handler (ship_preprocess
+                                   # /postprocess/animation_preprocess that hyper.c
+                                   # assigns to the flagship) + collision/inertial_
+                                   # thrust. NOTE: ship_preprocess calls the combat
+                                   # status/ion-trail (spawn_ion_trail/Pre-PostProcess
+                                   # Status/ship_transition) — STUB_TRAP'd for now, so
+                                   # actually FLYING into hyperspace will name them
+                                   # (the next increment); the nav code links now.
 )
 
 # libs/uio — the faithful UQM virtual filesystem (reads the .uqm content

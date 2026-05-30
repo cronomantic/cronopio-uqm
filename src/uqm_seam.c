@@ -155,6 +155,7 @@ const char **optAddons;
 /* PlayerInput[NUM_PLAYERS] — now defined by uqm/battlecontrols.c (in KEEP),
  * which also owns Human/ComputerInputContext_new. */
 SOUND MenuSounds;
+SOUND GameSounds;          /* battle sound table (sounds.c) — audio not built */
 volatile int GameActive;
 
 /* Game-data tables referenced by StartGame's tail (restart.c:399 —
