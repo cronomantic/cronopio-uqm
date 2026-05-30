@@ -167,26 +167,9 @@ STUB_TRAP (free_image)       /* free_ship(FreeBattleData=TRUE) only */
 
 /* ---- planet-SURFACE engine + scan/lander/report: reached only when the
  *      player ORBITS or SCANS a world (deeper than the system view). ---- */
-STUB_TRAP (GenerateLifeForms)
-STUB_TRAP (GenerateMineralDeposits)
-STUB_TRAP (GeneratePresetLife)
-STUB_TRAP (GenerateRandomNodes)
-STUB_TRAP (countNodesRetrieved)
-STUB_TRAP (isNodeRetrieved)
-STUB_TRAP (setNodeRetrieved)
 STUB_TRAP (DoDiscoveryReport)
 STUB_TRAP (KillLanderCrewSeq)
 STUB_TRAP (SetLanderTakeoff)
-STUB_TRAP (DestroyScanContext)
-STUB_TRAP (GetScanContext)
-STUB_TRAP (ScanSystem)
-STUB_TRAP (GeneratePlanetSide)
-STUB_TRAP (GeneratePlanetSurface)
-STUB_TRAP (DrawPlanet)
-STUB_TRAP (DrawDefaultPlanetSphere)
-STUB_TRAP (RotatePlanetSphere)
-STUB_TRAP (ZoomInPlanetSphere)
-STUB_TRAP (UninitSphereRotation)
 
 /* ---- sub-menus / star map / communication / leaf activities: reached only
  *      by a specific player action we have not enabled yet. ---- */
@@ -207,3 +190,15 @@ STUB_TRAP (Victory)
 STUB_TRAP (Credits)
 STUB_TRAP (InstallBombAtEarth)
 STUB_TRAP (HyperspaceMenu)
+
+/* ---- planet-surface engine landed (pl_stuff/plangen/gentopo/surface/scan +
+ *      cons_res). New boundary it exposes: ---- */
+void PlayMenuSound () { }            /* audio no-op (sounds.c) */
+/* WaitForAnyButtonUntil(newButton,timeOut,...) -> BOOLEAN: 0 = "timed out, no
+ * button" is the correct sentinel (the scan screen auto-advances), not garbage. */
+int WaitForAnyButtonUntil () { return 0; }
+/* lander.c — the LANDING minigame (deeper than orbit/scan); not reached by the
+ * scan path, so STUB_TRAP (loud if a descent is ever triggered). */
+STUB_TRAP (InitLander)
+STUB_TRAP (PlanetSide)
+STUB_TRAP (object_animation)

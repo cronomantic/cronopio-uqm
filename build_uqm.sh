@@ -240,6 +240,22 @@ GEN_SRCS=(
   "$US/uqm/planets/generate/genzoq.c"
 )
 
+# Slice 5b cont.: PLANET-SURFACE engine — ORBIT + SCAN a world. pl_stuff (the
+# rotating planet sphere) + plangen (elevation/topology → needs libm exp/acos,
+# now in picolibc) + gentopo (topography) + surface (mineral/energy/life node
+# generation) + scan (the scan screen + node retrieval). Compiling these lets a
+# generator's generateOrbital/generateMinerals/... hooks run for real when the
+# flagship enters a planet's orbit. The LANDER minigame (lander.c) + the
+# discovery report (report.c) stay boundary-stubbed (deeper than scan).
+SURF_SRCS=(
+  "$US/uqm/planets/pl_stuff.c"
+  "$US/uqm/planets/plangen.c"
+  "$US/uqm/planets/gentopo.c"
+  "$US/uqm/planets/surface.c"
+  "$US/uqm/planets/scan.c"
+  "$US/uqm/cons_res.c"
+)
+
 # libs/uio — the faithful UQM virtual filesystem (reads the .uqm content
 # packs, which are ZIPs). Bring-up in progress: backed on our libc stdio +
 # cron_rom; the zip layer needs a zlib inflate (TBD). Listed separately so
@@ -370,6 +386,7 @@ echo "[build] $(( ${#UQM_SRCS[@]} + ${#PORT[@]} )) translation units -> $OUT"
   "${SHIP_SRCS[@]}" \
   "${IP_SRCS[@]}" \
   "${GEN_SRCS[@]}" \
+  "${SURF_SRCS[@]}" \
   "${UIO_SRCS[@]}" \
   "${RES_SRCS[@]}" \
   "${STR_SRCS[@]}" \
