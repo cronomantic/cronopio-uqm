@@ -129,7 +129,7 @@ int GfxFlags;
 /* GraphicsDriver / ScreenWidth(Actual) / ScreenHeight(Actual) — now real,
  * in libs/graphics/gfx_common.c (in KEEP). */
 int snddriver, soundflags;
-ACTIVITY NextActivity;
+/* NextActivity — now owned by the core (full-core build); seam def removed. */
 /* LastActivity / FlagStatFrame / MiscDataFrame / FontGradFrame / GameStrings /
  * Screen — now defined by uqm/setup.c (in KEEP).
  * master_q — defined by uqm/master.c (in KEEP). */
@@ -144,8 +144,7 @@ int optMeleeScale;
 int optWhichCoarseScan;   /* planet-surface scan style (settings.c) */
 int optWhichShield;       /* planet shield-throb style (settings.c) */
 BOOLEAN optStereoSFX;
-FRAME stars_in_space;
-POINT SpaceOrg;
+/* stars_in_space / SpaceOrg — now owned by the core (full-core build). */
 volatile int QuitPosted;
 BOOLEAN opt3doMusic;
 BOOLEAN optSpeech;
@@ -154,10 +153,8 @@ int optWhichIntro;
 const char **optAddons;
 /* PlayerInput[NUM_PLAYERS] — now defined by uqm/battlecontrols.c (in KEEP),
  * which also owns Human/ComputerInputContext_new. */
-SOUND MenuSounds;
-SOUND GameSounds;          /* battle sound table (sounds.c) — audio not built */
-BYTE battle_counter[2];    /* NUM_SIDES; battle frame counter — battle only */
-FRAME explosion[16];       /* ship-explosion animation frames — battle only (zeroed) */
+/* MenuSounds / GameSounds (uqm/sounds.c), battle_counter / explosion (battle.c)
+ * — now owned by the core (full-core build); seam defs removed. */
 volatile int GameActive;
 
 /* Game-data tables referenced by StartGame's tail (restart.c:399 —

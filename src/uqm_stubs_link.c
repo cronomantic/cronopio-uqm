@@ -1,205 +1,156 @@
 /*
- * uqm_stubs_link.c — link-surface stubs for UQM subsystems not yet compiled.
+ * uqm_stubs_link.c — platform-seam stubs for the FULL-CORE UQM build.
  *
- * Two kinds of stub, kept STRICTLY apart after the ARCTAN incident (a math
- * leaf mis-stubbed as "battle-only" returned garbage → a garbage planet
- * image.frame → DrawStamp drew a garbage-sized stamp = a silent 1.5-hour
- * infinite-loop hang):
+ * Strategy (memory uqm-compile-core-not-stub): the WHOLE UQM game core is
+ * compiled (build_uqm.sh's find-based CORE_SRCS — every .c under uqm/ + libs/
+ * except the platform backends). The ONLY things stubbed here are the genuine
+ * PLATFORM SEAM: the 86 symbols left undefined once the core links, all of
+ * which live exclusively in the EXCLUDED backend dirs that Cronopio has no
+ * equivalent for —
+ *     libs/sound/*            (mixer, music, SFX, channels, volumes)
+ *     libs/sound/trackplayer  (speech track + subtitle cursor)
+ *     libs/video/*            (the legacy FMV player)
+ *     libs/input/sdl/*        (the SDL input backend + key config)
+ *     libs/graphics/sdl/sdl_common.c (system-rect dirty tracking, gamma,
+ *                              transition upload — the cron present is a full
+ *                              per-frame downsample, so these are no-ops)
+ *     libs/callback/alarm.c   (scheduled alarms — the cart loop doesn't pump them)
+ * plus a couple of true platform leaves (SDL_GetTicks, isatty, addon loading).
  *
- *   1. DELIBERATE no-ops / return-0 — functions that ARE reached on the live
- *      path and degrade gracefully (audio with no backend, a stationary
- *      flagship, a behavioural seam). These do nothing (or return the one
- *      correct sentinel, e.g. NULL/0) and must NOT corrupt state.
+ * NO game-logic function is stubbed (that was "un error colosal"): the seam set
+ * is the exact undefined residual reported by tools/seam_missing.sh, every entry
+ * verified to have no owner among the compiled core TUs. If a value-returning
+ * game fn ever turns up missing, the fix is to add its owning TU to the build,
+ * NEVER to stub it (a garbage return is the ARCTAN landmine).
  *
- *   2. STUB_TRAP — functions that should NEVER be reached on the current paths
- *      (boot, the menu, New Game → the interplanetary view). These belong to
- *      subsystems not yet brought up (battle/melee, planet-surface scan/orbit,
- *      the sub-menus / star map / communication). If one is ever called it is
- *      a MIS-CLASSIFICATION (the next ARCTAN): it LOGS ITS OWN NAME and traps
- *      immediately, so the bug is an instant, named halt — never silent
- *      garbage. When a subsystem lands, its STUB_TRAPs are deleted as the real
- *      TUs join build_uqm.sh's KEEP list.
- *
- * RULE learned: a value-returning function must NEVER be a silent stub. Either
- * compile its real owner (general math/util leaves — ARCTAN/trans.c,
- * square_root/sqrt.c, TFB_Random/random.c — are compiled, NOT stubbed) or
- * STUB_TRAP it. Before stubbing anything, grep its callers across ALL
- * subsystems; shared leaves are used everywhere.
+ * Return contract: in the loosely-typed VM ABI a no-arg `int f(void){return 0;}`
+ * is the right no-op for every shape here — a void caller ignores the result, a
+ * handle/pointer caller reads 0 == NULL (→ a guarded no-op, e.g. LoadSoundInstance
+ * → MenuSounds==NULL → the menu-sound block is skipped), a count/flag caller
+ * reads 0 == "nothing playing / not supported / timed out", all correct sentinels.
  */
 #include <stdint.h>
+#include <stdbool.h>
+#include <cronopio.h>           /* cron_time_ms */
 #include "port.h"
-#include "libs/compiler.h"
-#include "libs/log.h"
+#include "libs/compiler.h"      /* BOOLEAN */
+#include "options.h"            /* INPUT_TEMPLATE, opt* externs + the 3 prototyped
+                                 * seam fns (loadAddon/prepareAddons/setGammaCorrection)
+                                 * defined with their real signatures below. */
 
-/* A STUB_TRAP logs its name then halts (llvm.trap → VM HALT). The headless
- * runner prints the trap; the log line right before it names the culprit. */
-static void cron_stub_unreached (const char *name) {
-    log_add (log_Fatal, "CRON: UNREACHED STUB CALLED (mis-classified — compile "
-            "its owner or reclassify): %s", name);
-    __builtin_trap ();
-}
-#define STUB_TRAP(fn)  void fn (void) { cron_stub_unreached (#fn); }
+/* ---------------------------------------------------------------------- */
+/* Platform DATA globals (normally owned by the excluded backends). Sane,
+ * neutral defaults so the reads on the live path are correct, not garbage. */
 
-/* ====================================================================== *
- * 1. DELIBERATE no-ops / return-0 — reached on the live path, graceful.   *
- * ====================================================================== */
+INPUT_TEMPLATE input_templates[6];   /* key bindings (libs/input/sdl); the cart
+                                      * mirrors the pad straight into Immediate
+                                      * InputState, so these stay zeroed. */
+float   optGamma            = 1.0f;  /* neutral gamma (setupmenu's log() curve) */
+int     optSmoothScroll     = 0;     /* PC step-scroll */
+BOOLEAN optSubtitles        = TRUE;  /* show comm dialogue text (no voice anyway) */
+BOOLEAN optKeepAspectRatio  = TRUE;
 
-/* ---- audio / video: no backend yet, so every call is a silent no-op.
- *      These ARE invoked during normal play (menu sounds, music, SFX). ---- */
-void initAudio () { }
-void InitSound () { }
-void UninitSound () { }
-void StopSound () { }
-void DestroySound () { }
-void PlaySoundEffect () { }
-void PlayMusic () { }
-void StopMusic () { }
-void DestroyMusic () { }
-void InitVideoPlayer () { }
-void UninitVideoPlayer () { }
-void InstallAudioResTypes () { }
-void InstallVideoResType () { }
-void ProcessSound () { }
-void PlaySound () { }
-void CalcSoundPosition () { }
-void NotPositional () { }
-void FlushSounds () { }
-void RemoveSoundsForObject () { }
-void UpdateSoundPositions () { }
-/* Value-returning audio handles: 0/NULL is the CORRECT sentinel (a captured
- * NULL handle makes the dependent op a guarded no-op — NOT garbage). */
-void *LoadSoundInstance () { return 0; }      /* -> MenuSounds == NULL -> skipped */
-void *LoadMusicInstance () { return 0; }      /* -> hMusic == NULL -> skipped */
-uint32_t FadeMusic () { return 0; }           /* a past deadline -> SleepThreadUntil no-op */
-int PLRPlaying () { return 0; }               /* nothing is ever playing */
+int     musicVolume         = 0;     /* no audio backend */
+float   musicVolumeScale    = 1.0f;
+float   sfxVolumeScale      = 1.0f;
+float   speechVolumeScale   = 1.0f;
 
-/* ---- behavioural seams / graceful degradation (reached, no corruption) ---- */
-/* SplashScreen: MUST invoke its callback (BackgroundInitKernel runs
- * LoadMasterShipList); we just skip the splash graphic. */
-void SplashScreen (void (*DoProcessing)(DWORD TimeOut)) { if (DoProcessing) DoProcessing (0); }
-/* The cron present is a per-frame full downsample; no transition upload step. */
-void TFB_UploadTransitionScreen () { }
-/* No addon packs. */
-void loadAddon () { }
-void prepareAddons () { }
-/* Input-frame bookkeeping — harmless to skip. */
-void BeginInputFrame () { }
-void DoConfirmExit () { }
-void TFB_ResetControls () { }
-/* MoveSIS(SIZE*,SIZE*): the real one (hyper.c) moves the flagship by the input
- * delta; a no-op leaves the deltas untouched, so the flagship just sits still
- * — graceful for now (it does NOT return garbage). Compiling hyper.c is a
- * later slice. */
-/* Alarm timer lib not built — no scheduled alarms. */
-void Alarm_addAbsoluteMs () { }
-void Alarm_remove () { }
-/* util.c (UI box / RNG seed / pause) not yet compiled; these no-op gracefully
- * (a missing box / unseeded-but-deterministic RNG / no pause). Void, no garbage. */
-/* Battle/hyper DATA teardown — nothing was allocated (those subsystems are
- * stubbed), so freeing is a no-op. Void, no garbage. */
-/* init.c space setup — InitSISContexts/the view ran fine with these no-op'd;
- * keep them graceful (they may sit on the view-init path). */
-void InitSpace () { }
-void UninitSpace () { }
-/* LoadLanderData is called by InitSolarSys (solarsys.c) ON the view-init path,
- * not just on landing — no-op (no lander data) is graceful; void, no garbage. */
-/* On the New-Game / IP-flight path, reached + graceful (void, no garbage). The
- * intro story, universe seeding (state already set by InitGameStructures) and
- * the per-tick hyperspace-encounter check no-op until those subsystems land. */
-void Introduction () { }
-/* DrawMenuStateStrings: the SIS panel draws the status-text bar every frame
- * (sis.c) — void, on the passive view path; no-op = no bottom text (graceful). */
-void DrawMenuStateStrings () { }
+/* ---------------------------------------------------------------------- */
+/* True platform leaves with a meaningful value. */
 
-/* ====================================================================== *
- * 2. STUB_TRAP — must never be reached on boot / menu / interplanetary.   *
- *    If hit, it is a mis-classification: instant named halt, not garbage. *
- * ====================================================================== */
+uint32_t SDL_GetTicks (void) { return cron_time_ms (); }   /* host ms counter */
+int      isatty       (int fd) { (void)fd; return 0; }      /* never a tty */
 
-/* ---- battle / melee combat engine (cyborg AI, weapon, ship physics,
- *      velocity, gravity, status deltas, tactical transitions). Reached only
- *      in an actual battle. Many return values → a void stub would be a
- *      garbage landmine, hence TRAP. ---- */
-STUB_TRAP (ship_intelligence)
-STUB_TRAP (ship_weapons)
-STUB_TRAP (PlotIntercept)
-STUB_TRAP (computer_intelligence)
-STUB_TRAP (selectShipComputer)
-STUB_TRAP (frameInputHuman)
-STUB_TRAP (selectShipHuman)
-STUB_TRAP (initialize_laser)
-STUB_TRAP (initialize_missile)
-STUB_TRAP (weapon_collision)
-STUB_TRAP (ModifySilhouette)
-STUB_TRAP (TrackShip)
-STUB_TRAP (CalculateGravity)
-STUB_TRAP (TimeSpaceMatterConflict)
-STUB_TRAP (AbandonShip)
-STUB_TRAP (Battle)
-STUB_TRAP (collide)
-STUB_TRAP (do_damage)
-STUB_TRAP (load_animation)   /* load_ship(LoadBattleData=TRUE) only — we pass FALSE */
-STUB_TRAP (free_image)       /* free_ship(FreeBattleData=TRUE) only */
+/* ---------------------------------------------------------------------- */
+/* Seam no-ops (return 0 — see the return contract in the header comment). */
+#define SEAM(fn)  int fn (void) { return 0; }
 
-/* ---- planet-SURFACE engine + scan/lander/report: reached only when the
- *      player ORBITS or SCANS a world (deeper than the system view). ---- */
+/* ---- libs/sound: mixer / music / SFX / channels / volumes ---- */
+SEAM (initAudio)
+SEAM (InitSound)
+SEAM (UninitSound)
+SEAM (StopSound)
+SEAM (DestroySound)
+SEAM (DestroyMusic)
+SEAM (FadeMusic)
+SEAM (InstallAudioResTypes)
+SEAM (LoadSoundInstance)
+SEAM (LoadMusicInstance)
+SEAM (LoadMusicFile)
+SEAM (ChannelPlaying)
+SEAM (PlayChannel)
+SEAM (SetChannelVolume)
+SEAM (SetMusicVolume)
+SEAM (SetSpeechVolume)
+SEAM (WaitForSoundEnd)
+SEAM (UpdateSoundPosition)
+SEAM (GetPositionalObject)
+SEAM (SetPositionalObject)
+SEAM (PLRPause)
+SEAM (PLRPlaySong)
+SEAM (PLRPlaying)
+SEAM (PLRResume)
+SEAM (PLRStop)
 
-/* ---- sub-menus / star map / communication / leaf activities: reached only
- *      by a specific player action we have not enabled yet. ---- */
-STUB_TRAP (CargoMenu)
-STUB_TRAP (DevicesMenu)
-STUB_TRAP (RosterMenu)
-STUB_TRAP (StarMap)
-STUB_TRAP (MoveGalaxy)
-STUB_TRAP (DoMenuChooser)
-STUB_TRAP (GameOptions)
-STUB_TRAP (VisitStarBase)
-STUB_TRAP (RaceCommunication)
-STUB_TRAP (InitCommunication)
-STUB_TRAP (SetupMenu)
-STUB_TRAP (DoPopupWindow)
-STUB_TRAP (Melee)
-STUB_TRAP (Victory)
-STUB_TRAP (Credits)
-STUB_TRAP (InstallBombAtEarth)
+/* ---- libs/sound/trackplayer: speech track + subtitle cursor ---- */
+SEAM (PauseTrack)
+SEAM (ResumeTrack)
+SEAM (PlayTrack)
+SEAM (StopTrack)
+SEAM (JumpTrack)
+SEAM (PlayingTrack)
+SEAM (GetTrackPosition)
+SEAM (GetTrackSubtitle)
+SEAM (GetTrackSubtitleText)
+SEAM (GetFirstTrackSubtitle)
+SEAM (GetNextTrackSubtitle)
+SEAM (GetLastCharacter)
+SEAM (GetNextCharacter)
+SEAM (SpliceTrack)
+SEAM (SpliceMultiTrack)
+SEAM (FastForward_Page)
+SEAM (FastForward_Smooth)
+SEAM (FastReverse_Page)
+SEAM (FastReverse_Smooth)
 
-/* ---- planet-surface engine landed (pl_stuff/plangen/gentopo/surface/scan +
- *      cons_res). New boundary it exposes: ---- */
-void PlayMenuSound () { }            /* audio no-op (sounds.c) */
-/* WaitForAnyButtonUntil(newButton,timeOut,...) -> BOOLEAN: 0 = "timed out, no
- * button" is the correct sentinel (the scan screen auto-advances), not garbage. */
-/* lander.c — the LANDING minigame (deeper than orbit/scan); not reached by the
- * scan path, so STUB_TRAP (loud if a descent is ever triggered). */
+/* ---- libs/video: the legacy FMV player ---- */
+SEAM (InitVideoPlayer)
+SEAM (UninitVideoPlayer)
+SEAM (InstallVideoResType)
+SEAM (LoadLegacyVideoInstance)
+SEAM (DestroyLegacyVideo)
+SEAM (PlayLegacyVideo)
+SEAM (StopLegacyVideo)
+SEAM (PlayingLegacyVideo)
+SEAM (VidGetPosition)
+SEAM (VidProcessFrame)
+SEAM (VidSeek)
+SEAM (GraphForegroundStream)
+SEAM (streamOut)
 
-/* ---- report.c + util.c boundary (the discovery report + UI utilities) ---- */
-/* SetSystemRect/ClearSystemRect live in the SDL backend's sdl_common.c (we use
- * src/sdl_compat.c instead). They track a dirty "system rect" for partial
- * redraws; the cron present does a full per-frame downsample, so this is a
- * graceful no-op (void). */
-void SetSystemRect () { }
-void ClearSystemRect () { }
-/* Music/track player — audio not built; no-op, and PlayingTrack reports COUNT 0
- * ("nothing playing", the correct sentinel). */
-void PauseMusic () { }
-void PauseTrack () { }
-void ResumeMusic () { }
-void ResumeTrack () { }
-int PlayingTrack () { return 0; }
+/* ---- libs/input/sdl: the SDL input backend + key config ---- */
+SEAM (BeginInputFrame)
+SEAM (InterrogateInputState)
+SEAM (RebindInputState)
+SEAM (RemoveInputState)
+SEAM (EnterCharacterMode)
+SEAM (ExitCharacterMode)
+SEAM (SaveKeyConfiguration)
+SEAM (TFB_ResetControls)
 
-/* ---- hyper.c + ship.c boundary: the COMBAT/encounter surface a hyperspace
- *      encounter (or the flagship's combat ship_preprocess) reaches. BattleSong
- *      -> audio no-op. The rest are battle/melee/combat-status/ion-trail and are
- *      STUB_TRAP: NOT on the boot/menu/Sol-view path. ⚠ spawn_ion_trail /
- *      Pre/PostProcessStatus / ship_transition ARE reached once you actually FLY
- *      in hyperspace (ship.c's per-frame handler) — they'll name themselves then;
- *      that's the next increment (the combat-status/trail engine). ---- */
-void BattleSong () { }              /* audio no-op */
-STUB_TRAP (GetEncounterStarShip)
-STUB_TRAP (GetInitialMeleeStarShips)
+/* ---- libs/graphics/sdl/sdl_common.c: dirty-rect / gamma / transition ---- */
+SEAM (SetSystemRect)
+SEAM (ClearSystemRect)
+SEAM (TFB_UploadTransitionScreen)
+SEAM (TFB_SetGamma)
+SEAM (TFB_SupportsHardwareScaling)
 
-/* ---- status/tactrans/shipstat boundary: battle-element/encounter/melee leaves,
- *      reached only in actual combat (NOT hyperspace flight). ---- */
-STUB_TRAP (crew_preprocess)
-STUB_TRAP (MeleeShipDeath)
-STUB_TRAP (FleetIsInfinite)
-STUB_TRAP (UpdateShipFragCrew)
+/* ---- libs/callback/alarm.c: scheduled alarms (loop doesn't pump them) ---- */
+SEAM (Alarm_addAbsoluteMs)
+SEAM (Alarm_remove)
+
+/* ---- the 3 seam fns with real prototypes in options.h (signatures must
+ *      match, so they can't use the no-arg SEAM macro). ---- */
+BOOLEAN loadAddon        (const char *addon) { (void)addon; return 0; }   /* no addons */
+void    prepareAddons    (const char **addons) { (void)addons; }
+bool    setGammaCorrection (float gamma) { (void)gamma; return 0; }       /* no gamma backend */

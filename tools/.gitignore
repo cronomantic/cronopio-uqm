@@ -1,0 +1,9 @@
+# Scratch from the seam/core link-surface analysis (regenerated on demand by
+# measure_core.sh / seam_conflicts.sh / seam_missing.sh — not source).
+_sc/
+_core/
+_*.txt
+_*.sh
+*.wip.keep
+build_uqm.find.sh.keep
+measure_combat.sh
