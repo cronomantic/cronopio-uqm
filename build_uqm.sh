@@ -67,6 +67,7 @@ INCS=(
   -I "$US"
   -I "$US/libs"
   -I "$US/libs/uio"
+  -I "$US/libs/strings"               # strintrn.h (snd_cron builds SFX STRING_TABLEs)
   -I "$US/uqm"                        # ship TUs quote-include "resinst.h" etc.
   -I "$CRONOPIO/tools/2dpak/external" # stb_image.h (PNG decode, cart-side)
   -I "$SDK/external/miniz"            # <zlib.h>/<miniz.h> (uio zip fs)
@@ -134,6 +135,7 @@ PORT=(
   "$ROOT/src/sdl_compat.c"
   "$ROOT/src/img_cron.c"
   "$ROOT/src/vid_cron.c"
+  "$ROOT/src/snd_cron.c"
   "$ROOT/src/main_cron.c"
   "$SDK/lib/cron_sys.c"
   "$SDK/external/miniz/miniz.c"
@@ -160,7 +162,7 @@ echo "[build] ${#CORE_SRCS[@]} core + ${#GFXSDL_SRCS[@]} sdl-backend + ${#PORT[@
   "${PORT[@]}" \
   -o "$OUT" \
   --rom="$ROOT/content/uqm-0.8.0-content.uqm" \
-  --heap-reserve=8M \
+  --heap-reserve=16M \
   --stack-reserve=512K \
   --title="UQM" \
   --author="Cronomantic (Cronopio port)" \

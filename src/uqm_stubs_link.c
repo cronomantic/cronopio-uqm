@@ -7,8 +7,9 @@
  * PLATFORM SEAM: the 86 symbols left undefined once the core links, all of
  * which live exclusively in the EXCLUDED backend dirs that Cronopio has no
  * equivalent for —
- *     libs/sound/*            (mixer, music, SFX, channels, volumes)
- *     libs/sound/trackplayer  (speech track + subtitle cursor)
+ *     libs/sound/trackplayer  (speech track + subtitle cursor — 3DO voice pack;
+ *                              the music+SFX playback API is REAL now, owned by
+ *                              the host-native backend src/snd_cron.c)
  *     libs/video/*            (the legacy FMV player)
  *     libs/input/sdl/*        (the SDL input backend + key config)
  *     libs/graphics/sdl/sdl_common.c (system-rect dirty tracking, gamma,
@@ -50,10 +51,8 @@ int     optSmoothScroll     = 0;     /* PC step-scroll */
 BOOLEAN optSubtitles        = TRUE;  /* show comm dialogue text (no voice anyway) */
 BOOLEAN optKeepAspectRatio  = TRUE;
 
-int     musicVolume         = 0;     /* no audio backend */
-float   musicVolumeScale    = 1.0f;
-float   sfxVolumeScale      = 1.0f;
-float   speechVolumeScale   = 1.0f;
+/* music/SFX volumes + the whole libs/sound playback API are now owned by the
+ * host-native backend src/snd_cron.c (cron_module / cron_ogg / cron_pcm). */
 
 /* ---------------------------------------------------------------------- */
 /* True platform leaves with a meaningful value. */
@@ -65,32 +64,8 @@ int      isatty       (int fd) { (void)fd; return 0; }      /* never a tty */
 /* Seam no-ops (return 0 — see the return contract in the header comment). */
 #define SEAM(fn)  int fn (void) { return 0; }
 
-/* ---- libs/sound: mixer / music / SFX / channels / volumes ---- */
-SEAM (initAudio)
-SEAM (InitSound)
-SEAM (UninitSound)
-SEAM (StopSound)
-SEAM (DestroySound)
-SEAM (DestroyMusic)
-SEAM (FadeMusic)
-SEAM (InstallAudioResTypes)
-SEAM (LoadSoundInstance)
-SEAM (LoadMusicInstance)
-SEAM (LoadMusicFile)
-SEAM (ChannelPlaying)
-SEAM (PlayChannel)
-SEAM (SetChannelVolume)
-SEAM (SetMusicVolume)
-SEAM (SetSpeechVolume)
-SEAM (WaitForSoundEnd)
-SEAM (UpdateSoundPosition)
-SEAM (GetPositionalObject)
-SEAM (SetPositionalObject)
-SEAM (PLRPause)
-SEAM (PLRPlaySong)
-SEAM (PLRPlaying)
-SEAM (PLRResume)
-SEAM (PLRStop)
+/* ---- libs/sound playback (mixer/music/SFX/channels/volumes) is now REAL:
+ *      host-native backend in src/snd_cron.c. No stubs here. ---- */
 
 /* ---- libs/sound/trackplayer: speech track + subtitle cursor ---- */
 SEAM (PauseTrack)

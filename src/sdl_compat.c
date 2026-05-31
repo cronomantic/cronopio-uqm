@@ -169,9 +169,17 @@ SDL_CreateRGBSurface (Uint32 flags, int width, int height, int depth,
 
 	s = (SDL_Surface *)calloc (1, sizeof *s);
 	if (!s)
+	{
+		SDL_SetError ("out of memory (SDL_Surface, %dx%d@%d)", width, height, depth);
 		return NULL;
+	}
 	s->format = make_format (depth, Rmask, Gmask, Bmask, Amask);
-	if (!s->format) { free (s); return NULL; }
+	if (!s->format)
+	{
+		SDL_SetError ("out of memory (format, %dx%d@%d)", width, height, depth);
+		free (s);
+		return NULL;
+	}
 	s->w = width;
 	s->h = height;
 	s->pitch = ((width * s->format->BytesPerPixel) + 3) & ~3;
@@ -179,6 +187,8 @@ SDL_CreateRGBSurface (Uint32 flags, int width, int height, int depth,
 	                              : NULL;
 	if (width && height && !s->pixels)
 	{
+		SDL_SetError ("out of memory (%d bytes for %dx%d@%d pixels)",
+				(int)((size_t)s->pitch * height), width, height, depth);
 		free (s->format);
 		free (s);
 		return NULL;
