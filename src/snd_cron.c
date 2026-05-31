@@ -526,11 +526,23 @@ PLRPlaySong (MUSIC_REF MusicRef, BOOLEAN Continuous, BYTE Priority)
 	if (!MusicRef || !*MusicRef)
 		return;
 	s = *MusicRef;
-	stop_music ();                              /* host plays one stream at a time */
+	/* Switch streams by replacing in-place on the SAME host engine — do NOT
+	 * cron_*_stop() it first: stop + play in the same audio block race (the host
+	 * adopts the new track then a stale stop_req frees it), which silently kills
+	 * the new song. cron_module_play / cron_ogg_play already replace whatever is
+	 * playing on their engine. Only stop the OTHER engine when crossing kinds. */
 	if (s->kind == SND_KIND_OGG)
+	{
+		if (g_music_kind == SND_KIND_MODULE)
+			cron_module_stop ();
 		cron_ogg_play (s->data, (int) s->len, Continuous ? 1 : 0);
+	}
 	else
+	{
+		if (g_music_kind == SND_KIND_OGG)
+			cron_ogg_stop ();
 		cron_module_play (s->data, (int) s->len, Continuous ? 1 : 0);
+	}
 	g_music_kind = s->kind;
 	g_cur_music = MusicRef;
 	g_music_on = 1;
