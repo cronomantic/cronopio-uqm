@@ -68,7 +68,8 @@ INCS=(
   -I "$US/libs"
   -I "$US/libs/uio"
   -I "$US/uqm"                        # ship TUs quote-include "resinst.h" etc.
-  -I "$CRONOPIO/tools/2dpak/vendor"   # stb_image.h (PNG decode, cart-side)
+  -I "$CRONOPIO/tools/2dpak/external" # stb_image.h (PNG decode, cart-side)
+  -I "$SDK/external/miniz"            # <zlib.h>/<miniz.h> (uio zip fs)
 )
 
 # ====================================================================== #
@@ -135,7 +136,7 @@ PORT=(
   "$ROOT/src/vid_cron.c"
   "$ROOT/src/main_cron.c"
   "$SDK/lib/cron_sys.c"
-  "$SDK/lib/miniz.c"
+  "$SDK/external/miniz/miniz.c"
   "$RT/picolibc.bc"
 )
 
